@@ -1,0 +1,73 @@
+import express from "express";
+import { store } from "../store.js";
+import { randomUUID } from "crypto";
+
+const router = express.Router();
+
+/* REGISTER AGENT */
+router.post("/agents", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.body.experimentRunId
+  );
+
+  if (!run) {
+    return res.status(404).json({
+      error: "ExperimentRun not found",
+    });
+  }
+
+  const agent = {
+  id: randomUUID(),
+  deviceId: req.body.deviceId,
+  stateId: 1,
+  neighborhoodIds: [],
+};
+
+  run.agents.push(agent);
+
+  run.stateHistory.push({
+    id: randomUUID(),
+    agentId: agent.id,
+    deviceId: agent.deviceId,
+    stateId: 1,
+    timestamp: new Date().toISOString(),
+    reason: "agent_registered"
+  });
+
+  res.status(201).json(agent);
+});
+/* UPDATE AGENT STATE */
+router.patch("/agents/:id/state", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.body.experimentRunId
+  );
+
+  if (!run) {
+    return res.status(404).json({
+      error: "ExperimentRun not found",
+    });
+  }
+
+  const agent = run.agents.find(
+    (a) => a.id === req.params.id
+  );
+
+  if (!agent) {
+    return res.status(404).json({
+      error: "Agent not found",
+    });
+  }
+
+  agent.stateId = req.body.stateId;
+
+  run.stateHistory.push({
+    id: randomUUID(),
+    agentId: agent.id,
+    stateId: req.body.stateId,
+    timestamp: new Date().toISOString(),
+    reason: req.body.reason || "manual_update",
+  });
+
+  res.json(agent);
+});
+export default router;
