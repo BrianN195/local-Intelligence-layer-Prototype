@@ -9,6 +9,34 @@ Instead, every Agent should belong to exactly one Neighborhood. This makes owner
 Communication between Neighborhoods should happen through explicit Neighborhood-to-Neighborhood connections instead of shared Agents.
 
 ---
+## **File Overview**
+
+* **Routes folder:** Contains the API endpoints for:
+
+  * Creating agents
+  * Updating an agent's state
+  * Creating neighborhoods
+  * Adding agents to neighborhoods
+  * Creating an experiment run
+  * Retrieving the experiment run summary
+  * Exporting experiment run data
+  * Retrieving experiment metrics
+  * Retrieving experiment logs
+  * Analyzing collective behavior
+  * Retrieving collective behavior results only
+  * Sending signals
+
+* **app.js:** Should be self-explanatory. It initializes and configures the application.
+
+* **engine.js:** The core of the signal propagation system. It contains the logging functions as well as `processSignal`, which is the main function responsible for processing and propagating signals.
+
+* **metrics.js:** Contains the functions responsible for calculating and collecting experiment metrics.
+
+* **seedScript.js:**
+  During development, I usually created agents and neighborhoods manually using Postman. However, creating and assigning **81 agents across 9 neighborhoods** by hand would have required a large number of API requests. To simplify this process, I created this script. Using the existing endpoints and the current implementation, it automatically generates a **9×9 agent setup distributed across 9 neighborhoods**.
+
+* **store.js:** Used to simulate the database.
+
 
 ## Neighborhood Structure
 
