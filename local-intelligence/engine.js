@@ -185,14 +185,20 @@ export function processSignal(signal, run) {
           sourceId: target.id,
 
           targetId: neighborId,
-
-          visitedAgents: [...signal.visitedAgents, neighborId],
-
+          
           payload: {
             strength: signal.payload?.strength ?? 1,
           },
 
+          properties: signal.properties,
+
+          status: signal.status,
+
+          visitedAgents: [...signal.visitedAgents, neighborId],
+
           timestamp: new Date().toISOString(),
+
+          blocked: signal.blocked
         };
 
         run.signals.push(propagatedSignal);

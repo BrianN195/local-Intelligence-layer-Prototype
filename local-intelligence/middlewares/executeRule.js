@@ -1,100 +1,66 @@
 import { processSignal } from "../engine";
 
-export default function executeRule(rule, signal, run) {
+const actions = {
+    activate,
+    propagate,
+    block,
+    sync
+};
 
-    switch (rule.action) {
+export default function executeRule(rule, signal, run){
 
-        case "activate":
-            activate(signal)
-            console.log("Activate");
+    const action = actions[rule.action];
 
-            break;
-
-        case "propagate":
-            propagate(signal, run)
-            console.log("Propagate");
-
-            break;
-
-        case "block":
-            block(signal)
-            console.log("Blocked");
-
-            break;
-
-        case "sync":
-            sync(signal)
-            console.log("Synchronize");
-
-            break;
-
-        default:
-
-            console.log("Unknown Action");
+    if(!action){
+        console.log("Unknown Action");
+        return;
     }
+
+    return action(signal, run);
 }
 
 function activate(signal) {
+  const agent = store.agents.find((a) => a.id === signal.targetId);
 
-  const agent = store.agents.find(
-    (a) => a.id === signal.targetId
-  );
+  if (!agent) return;
 
-  if (!agent)
-    return;
+  const state = store.agentStates.find((s) => s.id === agent.stateId);
 
-  const state = store.agentStates.find(
-    (s) => s.id === agent.stateId
-  );
-
-  if (!state)
-    return;
+  if (!state) return;
 
   state.state = "active";
   state.updatedAt = new Date();
-
-};
+  //frage: warum nicht mit dem endpunkt zum updaten des agent states?
+}
 
 function block(signal) {
-
   signal.blocked = true;
-
-};
+  //im store gibts noch nichts bzgl signals, also aufbau, inhalt etc.
+}
 
 function propagate(signal, run) {
-
   processSignal(signal, run);
-
-};
+}
 
 function sync(signal, run) {
-    //sucht ne neighborhoodID und vergleicht sie mit der targetID, welche aber die ID von einem agent ist?
-    //noch korrigieren
-    const neighborhood = store.neighborhoods.find(
-    (n) => n.id === signal.targetId
+  const agent = store.agents.find((a) => a.id === signal.targetAgentId);
+
+  const neighborhood = store.neighborhoods.find(
+    (n) => n.id === agent.neighborhoodId,
   );
 
-  if (!neighborhood)
-    return;
+  if (!neighborhood) return;
 
   for (const agentId of neighborhood.agentIds) {
+    const agent = store.agents.find((a) => a.id === agentId);
 
-    const agent = store.agents.find(
-      (a) => a.id === agentId
-    );
+    if (!agent) continue;
 
-    if (!agent)
-      continue;
+    const state = store.agentStates.find((s) => s.id === agent.stateId);
 
-    const state = store.agentStates.find(
-      (s) => s.id === agent.stateId
-    );
-
-    if (!state)
-      continue;
+    if (!state) continue;
 
     state.state = "active";
     state.updatedAt = new Date();
   }
-
-};
+}

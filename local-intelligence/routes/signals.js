@@ -24,8 +24,12 @@ router.post("/signals", (req, res) => {
     type: req.body.type,
     sourceId: req.body.sourceId,
     targetId: req.body.targetId,
+    payload: req.body.payload,
+    properties: req.body.properties,
+    status: req.body.status,
     visitedAgents: [req.body.sourceId],
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    blocked: req.body.blocked
   };
 
   run.signals.push(signal);
