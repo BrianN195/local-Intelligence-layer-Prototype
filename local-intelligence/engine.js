@@ -61,7 +61,7 @@ export function processSignal(signal, run) {
 
   //====================================================
   // INVALID TARGET
-
+  
   if (!target) {
     logPropagation(run, signal, signal.sourceId, signal.targetId, {
       status: "blocked",

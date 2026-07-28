@@ -68,8 +68,9 @@ function propagate(signal, run) {
 };
 
 function sync(signal, run) {
-
-  const neighborhood = store.neighborhoods.find(
+    //sucht ne neighborhoodID und vergleicht sie mit der targetID, welche aber die ID von einem agent ist?
+    //noch korrigieren
+    const neighborhood = store.neighborhoods.find(
     (n) => n.id === signal.targetId
   );
 
