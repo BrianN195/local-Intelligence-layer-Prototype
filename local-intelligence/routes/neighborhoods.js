@@ -20,8 +20,23 @@ router.post("/neighborhoods", (req, res) => {
 
   const neighborhood = {
     id: randomUUID(),
+
     experimentRunId: run.id,
+
+    name: req.body.name || `Neighborhood ${run.neighborhoods.length + 1}`,
+
     agentIds: [],
+
+    configuration: {
+      topology: req.body.topology || "dynamic",
+      maxNeighbors: req.body.maxNeighbors ?? null,
+      algorithm: req.body.algorithm ?? null,
+      communicationRange: req.body.communicationRange ?? null,
+    },
+
+    status: "active",
+
+    metadata: {},
   };
 
   run.neighborhoods.push(neighborhood);
@@ -55,12 +70,16 @@ router.post("/neighborhoods/:id/agents", (req, res) => {
   // agentId: "..."
   // agentIds: ["...", "...", "..."]
 
-  const agentIds = req.body.agentIds || [req.body.agentId];
+  const agentIds = req.body.agentIds ?? [req.body.agentId];
 
   for (const agentId of agentIds) {
     const agent = run.agents.find((a) => a.id === agentId);
 
     if (!agent) {
+      continue;
+    }
+
+    if (agent.status === "offline") {
       continue;
     }
 

@@ -43,6 +43,7 @@ function logPropagation(run, signal, sourceAgentId, targetAgentId, data) {
 
     ruleTriggered: data.ruleTriggered,
   });
+  run.statistics.propagationCount++;
 }
 
 //====================================================
@@ -83,6 +84,8 @@ export function processSignal(signal, run) {
 
   if (ruleset?.rules?.length) {
     for (const rule of ruleset.rules) {
+      if (!rule.enabled) continue;
+
       if (rule.signalType !== signal.type) continue;
 
       if (
@@ -117,13 +120,7 @@ export function processSignal(signal, run) {
   //====================================================
   // STATE CHANGE LOG
 
-  logState(
-    run,
-    target.id,
-    previousState,
-    target.stateId,
-    signal.id
-);
+  logState(run, target.id, previousState, target.stateId, signal.id);
 
   //====================================================
   // PROPAGATION EVENT LOG
@@ -136,8 +133,4 @@ export function processSignal(signal, run) {
     delayMs: Date.now() - startTime,
   });
 
-  //====================================================
-  // BASIC SWARM PROPAGATION
-
-  
 }

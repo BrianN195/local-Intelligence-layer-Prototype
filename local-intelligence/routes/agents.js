@@ -7,7 +7,7 @@ const router = express.Router();
 /* REGISTER AGENT */
 router.post("/agents", (req, res) => {
   const run = store.experimentRuns.find(
-    (r) => r.id === req.body.experimentRunId
+    (r) => r.id === req.body.experimentRunId,
   );
 
   if (!run) {
@@ -17,29 +17,48 @@ router.post("/agents", (req, res) => {
   }
 
   const agent = {
-  id: randomUUID(),
-  deviceId: req.body.deviceId,
-  stateId: 1,
-  neighborhoodIds: [],
-};
+    id: randomUUID(),
+
+    deviceId: req.body.deviceId,
+
+    stateId: 1,
+
+    neighborhoodIds: [],
+
+    position: req.body.position || {
+      x: 0,
+      y: 0,
+    },
+
+    status: "online",
+
+    lastSeen: new Date().toISOString(),
+
+    metadata: {},
+  };
 
   run.agents.push(agent);
 
   run.stateHistory.push({
     id: randomUUID(),
+
     agentId: agent.id,
-    deviceId: agent.deviceId,
-    stateId: 1,
+
+    previousState: null,
+
+    newState: 1,
+
     timestamp: new Date().toISOString(),
-    reason: "agent_registered"
-  });
+
+    reason: "agent_registered",
+});
 
   res.status(201).json(agent);
 });
 /* UPDATE AGENT STATE */
 router.patch("/agents/:id/state", (req, res) => {
   const run = store.experimentRuns.find(
-    (r) => r.id === req.body.experimentRunId
+    (r) => r.id === req.body.experimentRunId,
   );
 
   if (!run) {
@@ -48,24 +67,29 @@ router.patch("/agents/:id/state", (req, res) => {
     });
   }
 
-  const agent = run.agents.find(
-    (a) => a.id === req.params.id
-  );
+  const agent = run.agents.find((a) => a.id === req.params.id);
 
   if (!agent) {
     return res.status(404).json({
       error: "Agent not found",
     });
   }
-
+  const previousState = agent.stateId;
   agent.stateId = req.body.stateId;
-
+  agent.lastSeen = new Date().toISOString();
   run.stateHistory.push({
     id: randomUUID(),
+
     agentId: agent.id,
-    stateId: req.body.stateId,
+
+    previousState,
+
+    newState: req.body.stateId,
+
     timestamp: new Date().toISOString(),
+
     reason: req.body.reason || "manual_update",
+    
   });
 
   res.json(agent);

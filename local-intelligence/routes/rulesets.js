@@ -9,7 +9,7 @@ Assign Rule Set
 ==================================================== */
 router.post("/rulesets", (req, res) => {
   const run = store.experimentRuns.find(
-    (r) => r.id === req.body.experimentRunId
+    (r) => r.id === req.body.experimentRunId,
   );
 
   if (!run) {
@@ -18,14 +18,36 @@ router.post("/rulesets", (req, res) => {
 
   const ruleset = {
     id: randomUUID(),
-    rules: req.body.rules || [],
-    active: true
+
+    name: req.body.name || "Default RuleSet",
+
+    experimentRunId: run.id,
+
+    rules: req.body.rules ?? [],
+
+    active: req.body.active ?? true,
+
+    createdAt: new Date().toISOString(),
+
+    activatedAt: new Date().toISOString(),
+
+    deactivatedAt: null,
+
+    version: req.body.version || "v1",
+
+    metadata: {},
   };
+
+  for (const rs of run.rulesets) {
+    rs.active = false;
+    rs.deactivatedAt = new Date().toISOString();
+  }
 
   run.rulesets.push(ruleset);
 
+  run.activeRuleSetId = ruleset.id;
+
   res.status(201).json(ruleset);
 });
-
 
 export default router;

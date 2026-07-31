@@ -9,7 +9,7 @@ const router = express.Router();
 ==================================================== */
 router.post("/signals", (req, res) => {
   const run = store.experimentRuns.find(
-    (r) => r.id === req.body.experimentRunId
+    (r) => r.id === req.body.experimentRunId,
   );
 
   if (!run) {
@@ -22,24 +22,26 @@ router.post("/signals", (req, res) => {
     id: randomUUID(),
     experimentRunId: run.id,
     type: req.body.type,
-    sourceId: req.body.sourceId,
-    targetId: req.body.targetId,
-    payload: req.body.payload,
-    properties: req.body.properties,
-    status: req.body.status,
-    visitedAgents: [req.body.sourceId],
+    sourceAgentId: req.body.sourceAgentId,
+    targetAgentId: req.body.targetAgentId,
+    payload: req.body.payload || {},
+    properties: {
+      strength: req.body.properties?.strength ?? 1,
+      priority: req.body.properties?.priority ?? "normal",
+      ttl: req.body.properties?.ttl ?? 10,
+      hopCount: req.body.properties?.hopCount ?? 0,
+    },
+    status: req.body.status || "created",
+    visitedAgents: [req.body.sourceAgentId],
     timestamp: new Date().toISOString(),
-    blocked: req.body.blocked
+    blocked: req.body.blocked ?? false,
   };
 
   run.signals.push(signal);
-
+  run.statistics.signalCount++;
   processSignal(signal, run);
 
   res.status(201).json(signal);
 });
-
-
-
 
 export default router;

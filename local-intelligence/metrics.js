@@ -1,3 +1,5 @@
+import { randomUUID } from "crypto";
+
 export function calculateMetrics(run) {
   const metrics = [];
   const timestamp = new Date().toISOString();
@@ -8,12 +10,15 @@ export function calculateMetrics(run) {
 
   const totalAgents = run.agents.length;
 
-  const activeAgents = run.agents.filter((agent) => agent.stateId === 3).length;
+  const activeAgents = run.agents.filter(
+    (agent) => agent.stateId === 3
+  ).length;
 
-  const activationDensity = totalAgents > 0 ? activeAgents / totalAgents : 0;
+  const activationDensity =
+    totalAgents > 0 ? activeAgents / totalAgents : 0;
 
   metrics.push({
-    id: crypto.randomUUID(),
+    id: randomUUID(),
 
     experimentRunId: run.id,
 
@@ -29,7 +34,7 @@ export function calculateMetrics(run) {
   // =========================================
 
   metrics.push({
-    id: crypto.randomUUID(),
+    id: randomUUID(),
 
     experimentRunId: run.id,
 
@@ -52,12 +57,15 @@ export function calculateMetrics(run) {
       states.filter((x) => x === a).length,
   )[0];
 
-  const sameStateCount = states.filter((s) => s === mostCommonState).length;
+  const sameStateCount = states.filter(
+    (s) => s === mostCommonState
+  ).length;
 
-  const syncScore = totalAgents > 0 ? sameStateCount / totalAgents : 0;
+  const syncScore =
+    totalAgents > 0 ? sameStateCount / totalAgents : 0;
 
   metrics.push({
-    id: crypto.randomUUID(),
+    id: randomUUID(),
 
     experimentRunId: run.id,
 
@@ -85,17 +93,19 @@ export function calculateMetrics(run) {
       if (neighborhoodAgents.length === 0) continue;
 
       const activeNeighborhoodAgents = neighborhoodAgents.filter(
-        (agent) => agent.state === 2,
+        (agent) => agent.stateId === 2,
       ).length;
 
-      clustering += activeNeighborhoodAgents / neighborhoodAgents.length;
+      clusteringSum +=
+        activeNeighborhoodAgents / neighborhoodAgents.length;
     }
 
-    clustering = clustering / run.neighborhoods.length;
+    clustering =
+      clusteringSum / run.neighborhoods.length;
   }
 
   metrics.push({
-    id: crypto.randomUUID(),
+    id: randomUUID(),
 
     experimentRunId: run.id,
 
@@ -113,15 +123,20 @@ export function calculateMetrics(run) {
   const stateCounter = {};
 
   for (const agent of run.agents) {
-    stateCounter[agent.state] = (stateCounter[agent.state] || 0) + 1;
+    stateCounter[agent.stateId] =
+      (stateCounter[agent.stateId] || 0) + 1;
   }
 
-  const highestCount = Math.max(...Object.values(stateCounter), 0);
+  const highestCount = Math.max(
+    ...Object.values(stateCounter),
+    0
+  );
 
-  const consensus = totalAgents > 0 ? highestCount / totalAgents : 0;
+  const consensus =
+    totalAgents > 0 ? highestCount / totalAgents : 0;
 
   metrics.push({
-    id: crypto.randomUUID(),
+    id: randomUUID(),
 
     experimentRunId: run.id,
 

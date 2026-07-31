@@ -50,6 +50,10 @@ function propagate(signal, run) {
 
   if (signal.blocked) return;
 
+  if ((signal.properties.ttl ?? 0) <= 0) {
+    return;
+  }
+
   const sourceAgent = run.agents.find(
     (a) => a.id === signal.targetAgentId,
   );
@@ -107,8 +111,9 @@ function propagate(signal, run) {
         payload: structuredClone(signal.payload),
 
         properties: {
-          ...signal.properties,
-          hopCount: (signal.properties?.hopCount ?? 0) + 1,
+            ...signal.properties,
+            ttl: signal.properties.ttl - 1,
+            hopCount: (signal.properties.hopCount ?? 0) + 1,
         },
 
         status: "created",
