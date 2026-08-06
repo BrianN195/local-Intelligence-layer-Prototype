@@ -12,6 +12,22 @@ router.post("/signals", (req, res) => {
     (r) => r.id === req.body.experimentRunId,
   );
 
+  const sourceExists = run.agents.some(
+    (agent) => agent.id === req.body.sourceAgentId,
+  );
+
+  const targetExists = run.agents.some(
+    (agent) => agent.id === req.body.targetAgentId,
+  );
+
+  if (!sourceExists || !targetExists) {
+    return res.status(400).json({
+      error: "Invalid agent reference",
+      sourceExists,
+      targetExists,
+    });
+  }
+
   if (!run) {
     return res.status(404).json({
       error: "ExperimentRun not found",
