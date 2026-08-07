@@ -17,6 +17,44 @@ function isValidPosition(row, col) {
   )
 }
 
+// global bounds, inclusive and 1-indexed, e.g. rows 1-3 / cols 4-6
+function isValidBounds(b) {
+  return (
+    b &&
+    [b.rowStart, b.rowEnd, b.colStart, b.colEnd].every(
+      (v) => Number.isInteger(v) && v >= 1,
+    ) &&
+    b.rowStart <= b.rowEnd &&
+    b.colStart <= b.colEnd
+  );
+}
+
+// direction of b relative to a, or null if they are not adjacent
+function directionOf(a, b) {
+  const sameRows = a.rowStart === b.rowStart && a.rowEnd === b.rowEnd;
+  const sameCols = a.colStart === b.colStart && a.colEnd === b.colEnd;
+
+  if (sameRows && a.colEnd + 1 === b.colStart) return "east";
+  if (sameRows && b.colEnd + 1 === a.colStart) return "west";
+  if (sameCols && a.rowEnd + 1 === b.rowStart) return "south";
+  if (sameCols && b.rowEnd + 1 === a.rowStart) return "north";
+
+  return null;
+}
+
+// manhattan distance between the centers of both bounds, in global cells
+function distanceBetween(a, b) {
+  const center = (bounds) => ({
+    row: (bounds.rowStart + bounds.rowEnd) / 2,
+    col: (bounds.colStart + bounds.colEnd) / 2,
+  });
+
+  const ca = center(a);
+  const cb = center(b);
+
+  return Math.abs(ca.row - cb.row) + Math.abs(ca.col - cb.col);
+}
+
 /* ====================================================
    CREATE NEIGHBORHOOD
 ==================================================== */
@@ -31,10 +69,21 @@ router.post("/neighborhoods", (req, res) => {
     });
   }
 
+  // optional for now so existing callers keep working
+  const bounds = req.body.bounds ?? null;
+
+  if (bounds && !isValidBounds(bounds)) {
+    return res.status(400).json({
+      error: "bounds must have integer rowStart <= rowEnd and colStart <= colEnd, all >= 1.",
+    });
+  }
+
   const neighborhood = {
     id: randomUUID(),
     experimentRunId: run.id,
+    bounds,
     agentIds: [],
+    neighbors: [],
   };
 
   run.neighborhoods.push(neighborhood);
@@ -89,8 +138,9 @@ router.post("/neighborhoods/:id/agents", (req, res) => {
         error: "Agent is already in another neighborhood.",
       });
       continue;
+    }
 
-    if (!isValidPosition(agent.position.row, agent.position.col)) {
+    if (!isValidPosition(row, col)) {
       errors.push({
         agentId,
         error: `Agent position is out of bounds, must be within row 1-${GRID_ROWS_BOUND} and col 1-${GRID_COLS_BOUND}.`,
@@ -120,7 +170,81 @@ router.post("/neighborhoods/:id/agents", (req, res) => {
 
     agent.neighborhoodId = neighborhood.id;
     agent.position = {row, col}
+    assigned.push(agent.id);
   }
+
+  res.json({ neighborhood, assigned, errors });
+});
+
+/* ====================================================
+   CONNECT NEIGHBORHOODS
+   Rebuilds every connection from the global bounds.
+==================================================== */
+router.post("/neighborhoods/connect", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.body.experimentRunId,
+  );
+
+  if (!run) {
+    return res.status(404).json({ error: "ExperimentRun not found" });
+  }
+
+  const withBounds = run.neighborhoods.filter((n) => n.bounds);
+
+  for (const n of run.neighborhoods) {
+    n.neighbors = [];
+  }
+
+  for (const a of withBounds) {
+    for (const b of withBounds) {
+      if (a === b) continue;
+
+      const direction = directionOf(a.bounds, b.bounds);
+
+      if (!direction) continue;
+
+      a.neighbors.push({
+        neighborhoodId: b.id,
+        direction,
+        distance: distanceBetween(a.bounds, b.bounds),
+      });
+    }
+  }
+
+  res.json({
+    connected: withBounds.length,
+    skipped: run.neighborhoods.length - withBounds.length,
+    neighborhoods: run.neighborhoods,
+  });
+});
+
+/* ====================================================
+   REMOVE AGENT FROM NEIGHBORHOOD
+==================================================== */
+router.delete("/neighborhoods/:id/agents/:agentId", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.body.experimentRunId,
+  );
+
+  if (!run) {
+    return res.status(404).json({ error: "ExperimentRun not found" });
+  }
+
+  const neighborhood = run.neighborhoods.find((n) => n.id === req.params.id);
+
+  if (!neighborhood) {
+    return res.status(404).json({ error: "Neighborhood not found" });
+  }
+
+  const agent = run.agents.find((a) => a.id === req.params.agentId);
+
+  if (!agent || agent.neighborhoodId !== neighborhood.id) {
+    return res.status(404).json({ error: "Agent is not in this neighborhood" });
+  }
+
+  neighborhood.agentIds = neighborhood.agentIds.filter((id) => id !== agent.id);
+  agent.neighborhoodId = null;
+  agent.position = { row: null, col: null };
 
   res.json(neighborhood);
 });
