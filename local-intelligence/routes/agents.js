@@ -20,7 +20,8 @@ router.post("/agents", (req, res) => {
   id: randomUUID(),
   deviceId: req.body.deviceId,
   stateId: 1,
-  neighborhoodIds: [],
+  neighborhoodId: null,
+  position: {row: null, col: null},
 };
 
   run.agents.push(agent);

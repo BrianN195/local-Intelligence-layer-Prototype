@@ -151,14 +151,12 @@ export function processSignal(signal, run) {
   //====================================================
   // BASIC SWARM PROPAGATION
 
-  if (newStateName === "active" && target.neighborhoodIds?.length) {
-    for (const neighborhoodId of target.neighborhoodIds) {
-      const neighborhood = run.neighborhoods.find(
-        (n) => n.id === neighborhoodId,
-      );
+  if (newStateName === "active" && target.neighborhoodId) {
+    const neighborhood = run.neighborhoods.find(
+      (n) => n.id === target.neighborhoodId,
+    );
 
-      if (!neighborhood) continue;
-
+    if (neighborhood) {
       for (const neighborId of neighborhood.agentIds) {
         // prüfung ob signal weiter geht
         if (neighborId === target.id) continue;
