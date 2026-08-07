@@ -149,4 +149,35 @@ router.post("/neighborhoods/:id/agents", (req, res) => {
   res.json({ neighborhood, assigned, errors });
 });
 
+/* ====================================================
+   REMOVE AGENT FROM NEIGHBORHOOD
+==================================================== */
+router.delete("/neighborhoods/:id/agents/:agentId", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.body.experimentRunId,
+  );
+
+  if (!run) {
+    return res.status(404).json({ error: "ExperimentRun not found" });
+  }
+
+  const neighborhood = run.neighborhoods.find((n) => n.id === req.params.id);
+
+  if (!neighborhood) {
+    return res.status(404).json({ error: "Neighborhood not found" });
+  }
+
+  const agent = run.agents.find((a) => a.id === req.params.agentId);
+
+  if (!agent || agent.neighborhoodId !== neighborhood.id) {
+    return res.status(404).json({ error: "Agent is not in this neighborhood" });
+  }
+
+  neighborhood.agentIds = neighborhood.agentIds.filter((id) => id !== agent.id);
+  agent.neighborhoodId = null;
+  agent.position = { row: null, col: null };
+
+  res.json(neighborhood);
+});
+
 export default router;
