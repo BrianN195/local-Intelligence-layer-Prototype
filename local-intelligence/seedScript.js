@@ -43,13 +43,22 @@ async function seed() {
   const agents = [];
 
 
-  // 2. Create 9 Neighborhoods
-  for (let n = 1; n <= 9; n++) {
+  // 2. Create 9 Neighborhoods as a 3x3 global layout
+  for (let n = 0; n < 9; n++) {
+
+    const blockRow = Math.floor(n / 3);
+    const blockCol = n % 3;
 
     const neighborhood = await post(
       "/neighborhoods",
       {
         experimentRunId: experimentId,
+        bounds: {
+          rowStart: blockRow * 3 + 1,
+          rowEnd: blockRow * 3 + 3,
+          colStart: blockCol * 3 + 1,
+          colEnd: blockCol * 3 + 3,
+        },
       }
     );
 
@@ -62,8 +71,8 @@ async function seed() {
     );
 
 
-    // 3. Create 9 Agents per Neighborhood
-    for (let a = 1; a <= 9; a++) {
+    // 3. Create 9 Agents per Neighborhood, on a local 3x3 grid
+    for (let a = 0; a < 9; a++) {
 
       const agent = await post(
         "/agents",
@@ -77,16 +86,32 @@ async function seed() {
       agents.push(agent);
 
 
-      // 4. Add Agent to Neighborhood
+      // 4. Add Agent to Neighborhood at its local position
       await post(
         `/neighborhoods/${neighborhood.id}/agents`,
         {
           experimentRunId: experimentId,
           agentId: agent.id,
+          row: Math.floor(a / 3) + 1,
+          col: (a % 3) + 1,
         }
       );
     }
   }
+
+
+  // 5. Connect Neighborhoods using their global bounds
+  const connections = await post(
+    "/neighborhoods/connect",
+    {
+      experimentRunId: experimentId,
+    }
+  );
+
+
+  console.log(
+    `Connected ${connections.connected} Neighborhoods`
+  );
 
 
   console.log("\n========== SEED COMPLETE ==========");
@@ -116,7 +141,7 @@ async function seed() {
   );
 
   console.log(
-    neighborhoods[0]
+    connections.neighborhoods[0]
   );
 }
 

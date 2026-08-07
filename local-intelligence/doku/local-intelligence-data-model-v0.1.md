@@ -80,7 +80,9 @@ A Neighborhood introduces this additional abstraction by grouping Agents within 
 |----|----|----|
 |id|string|Unique identifier
 |experimentRunId| string| Reference to the ExperimentRun
-|agentIds| string[]|References to Agents belonging to the Neighborhood
+|bounds| Object| Global position of the Neighborhood (rowStart, rowEnd, colStart, colEnd), inclusive and 1-indexed. Used only to derive adjacency.
+|agentIds| string[]|References to Agents belonging to the Neighborhood. An Agent belongs to exactly one Neighborhood.
+|neighbors| Object[]| Adjacent Neighborhoods, each as (neighborhoodId, direction, distance)
 
 #### Possible Future Field
 
@@ -99,11 +101,16 @@ Readable Example
 {
   "id": "7",
   "experimentRunId": "12",
+  "bounds": { "rowStart": 1, "rowEnd": 3, "colStart": 4, "colEnd": 6 },
   "agentIds": [
     "agent-17",
     "agent-18",
     "agent-19",
     "agent-20"
+  ],
+  "neighbors": [
+    { "neighborhoodId": "6", "direction": "west", "distance": 3 },
+    { "neighborhoodId": "8", "direction": "east", "distance": 3 }
   ]
 }
 ```
