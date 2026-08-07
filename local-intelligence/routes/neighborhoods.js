@@ -29,6 +29,32 @@ function isValidBounds(b) {
   );
 }
 
+// direction of b relative to a, or null if they are not adjacent
+function directionOf(a, b) {
+  const sameRows = a.rowStart === b.rowStart && a.rowEnd === b.rowEnd;
+  const sameCols = a.colStart === b.colStart && a.colEnd === b.colEnd;
+
+  if (sameRows && a.colEnd + 1 === b.colStart) return "east";
+  if (sameRows && b.colEnd + 1 === a.colStart) return "west";
+  if (sameCols && a.rowEnd + 1 === b.rowStart) return "south";
+  if (sameCols && b.rowEnd + 1 === a.rowStart) return "north";
+
+  return null;
+}
+
+// manhattan distance between the centers of both bounds, in global cells
+function distanceBetween(a, b) {
+  const center = (bounds) => ({
+    row: (bounds.rowStart + bounds.rowEnd) / 2,
+    col: (bounds.colStart + bounds.colEnd) / 2,
+  });
+
+  const ca = center(a);
+  const cb = center(b);
+
+  return Math.abs(ca.row - cb.row) + Math.abs(ca.col - cb.col);
+}
+
 /* ====================================================
    CREATE NEIGHBORHOOD
 ==================================================== */
@@ -57,6 +83,7 @@ router.post("/neighborhoods", (req, res) => {
     experimentRunId: run.id,
     bounds,
     agentIds: [],
+    neighbors: [],
   };
 
   run.neighborhoods.push(neighborhood);
@@ -147,6 +174,48 @@ router.post("/neighborhoods/:id/agents", (req, res) => {
   }
 
   res.json({ neighborhood, assigned, errors });
+});
+
+/* ====================================================
+   CONNECT NEIGHBORHOODS
+   Rebuilds every connection from the global bounds.
+==================================================== */
+router.post("/neighborhoods/connect", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.body.experimentRunId,
+  );
+
+  if (!run) {
+    return res.status(404).json({ error: "ExperimentRun not found" });
+  }
+
+  const withBounds = run.neighborhoods.filter((n) => n.bounds);
+
+  for (const n of run.neighborhoods) {
+    n.neighbors = [];
+  }
+
+  for (const a of withBounds) {
+    for (const b of withBounds) {
+      if (a === b) continue;
+
+      const direction = directionOf(a.bounds, b.bounds);
+
+      if (!direction) continue;
+
+      a.neighbors.push({
+        neighborhoodId: b.id,
+        direction,
+        distance: distanceBetween(a.bounds, b.bounds),
+      });
+    }
+  }
+
+  res.json({
+    connected: withBounds.length,
+    skipped: run.neighborhoods.length - withBounds.length,
+    neighborhoods: run.neighborhoods,
+  });
 });
 
 /* ====================================================
