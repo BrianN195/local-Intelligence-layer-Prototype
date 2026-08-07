@@ -120,7 +120,7 @@ router.get("/rules/:experimentRunId", (req, res) => {
 /* ====================================================
    EDIT RULE
 ==================================================== */
-router.put("/rules/:id", (req, res) => {
+router.patch("/rules/:id", (req, res) => {
   for (const run of store.experimentRuns) {
     for (const ruleset of run.rulesets) {
       const rule = ruleset.rules.find((r) => r.id === req.params.id);

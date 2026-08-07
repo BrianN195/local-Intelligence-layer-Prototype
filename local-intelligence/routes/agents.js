@@ -30,6 +30,8 @@ router.post("/agents", (req, res) => {
       y: 0,
     },
 
+    priority: req.body.priority ?? 1,
+
     status: "online",
 
     lastSeen: new Date().toISOString(),

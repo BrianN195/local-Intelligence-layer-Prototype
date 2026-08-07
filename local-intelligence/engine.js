@@ -1,68 +1,41 @@
 import { randomUUID } from "crypto";
-import executeRule from "./middlewares/executeRule.js";
-import { getStateName } from "./stateHelpers.js";
-//====================================================
-// LOGGING FUNCTIONS
-
-function logState(run, agentId, previousState, newState, signalId) {
-  run.stateHistory.push({
-    id: randomUUID(),
-    agentId,
-    previousState,
-    newState,
-    signalId,
-    timestamp: new Date().toISOString(),
-  });
-}
-
-function logPropagation(run, signal, sourceAgentId, targetAgentId, data) {
-  run.propagationEvents.push({
-    id: randomUUID(),
-
-    experimentRunId: run.id,
-
-    signalId: signal.id,
-
-    sourceAgentId,
-
-    targetAgentId,
-
-    signalType: signal.type,
-
-    signalStrength: signal.payload?.strength || 0,
-
-    timestamp: new Date().toISOString(),
-
-    status: data.status,
-
-    delayMs: data.delayMs,
-
-    localStateBefore: data.localStateBefore,
-
-    localStateAfter: data.localStateAfter,
-
-    ruleTriggered: data.ruleTriggered,
-  });
-  run.statistics.propagationCount++;
-}
-
+import evaluateRules from "./middlewares/evaluateRules.js";
+import {
+  logPropagation,
+  logState,
+  logTechnicalWarning,
+  logFailure,
+} from "./middlewares/loggingFunc.js";
 //====================================================
 // MAIN ENGINE
 
 export function processSignal(signal, run) {
   const startTime = Date.now();
 
+  signal.status = "processing";
+
+  run.statistics.processedSignals = (run.statistics.processedSignals ?? 0) + 1;
+
   const target = run.agents.find((a) => a.id === signal.targetAgentId);
 
   //====================================================
   // INVALID TARGET
+  const sourceAgent = run.agents.find((a) => a.id === signal.sourceAgentId);
+
+  const sourceState = sourceAgent?.stateId ?? null;
 
   if (!target) {
+    logFailure(run, "INVALID_TARGET", "Signal target agent not found.", {
+      signalId: signal.id,
+      targetAgentId: signal.targetAgentId,
+    });
     logPropagation(run, signal, signal.sourceAgentId, signal.targetAgentId, {
       status: "blocked",
       ruleTriggered: null,
       localStateBefore: null,
       localStateAfter: null,
+      sourceState,
+      targetState,
       delayMs: Date.now() - startTime,
     });
 
@@ -78,41 +51,33 @@ export function processSignal(signal, run) {
   //====================================================
   // RULESET EVALUATION
 
-  let triggeredRule = null;
+  const { triggeredRule, blocked } = evaluateRules(signal, run);
 
-  const ruleset = run.rulesets?.find((r) => r.active);
-
-  if (ruleset?.rules?.length) {
-    for (const rule of ruleset.rules) {
-      if (!rule.enabled) continue;
-
-      if (rule.signalType !== signal.type) continue;
-
-      if (
-        rule.threshold !== undefined &&
-        (signal.payload?.strength ?? 0) < rule.threshold
-      ) {
-        continue;
-      }
-
-      triggeredRule = rule.id;
-
-      executeRule(rule, signal, run);
-      // const result = executeRule(rule, signal, run);
-      if (signal.blocked) {
-        break;
-      }
-    }
+  if (triggeredRule === null) {
+    logFailure(
+      run,
+      "NO_RULE_TRIGGERED",
+      "No matching rule was found for the signal.",
+      {
+        signalId: signal.id,
+        signalType: signal.type,
+      },
+    );
   }
 
-  if (signal.blocked) {
+  if (blocked) {
+    signal.status = "blocked";
     logPropagation(run, signal, signal.sourceAgentId, signal.targetAgentId, {
       status: "blocked",
       ruleTriggered: triggeredRule,
       localStateBefore: previousState,
       localStateAfter: previousState,
+      sourceState,
+      targetState: previousState,
       delayMs: Date.now() - startTime,
     });
+
+    run.statistics.blockedSignals = (run.statistics.blockedSignals ?? 0) + 1;
 
     return;
   }
@@ -120,17 +85,34 @@ export function processSignal(signal, run) {
   //====================================================
   // STATE CHANGE LOG
 
-  logState(run, target.id, previousState, target.stateId, signal.id);
+  //====================================================
+  // STATE CHANGE LOG
+
+  if (previousState !== target.stateId) {
+    logState(
+      run,
+      target.id,
+      previousState,
+      target.stateId,
+      signal.id,
+      triggeredRule,
+    );
+    run.statistics.stateChanges = (run.statistics.stateChanges ?? 0) + 1;
+  }
 
   //====================================================
   // PROPAGATION EVENT LOG
 
   logPropagation(run, signal, signal.sourceAgentId, signal.targetAgentId, {
     status: "success",
+    sourceState,
+    targetState: target.stateId,
     ruleTriggered: triggeredRule,
     localStateBefore: previousState,
     localStateAfter: target.stateId,
     delayMs: Date.now() - startTime,
   });
-
+  run.statistics.successfulSignals =
+    (run.statistics.successfulSignals ?? 0) + 1;
+  signal.status = "completed";
 }

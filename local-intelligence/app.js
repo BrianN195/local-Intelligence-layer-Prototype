@@ -5,7 +5,7 @@ import agentRoutes from "./routes/agents.js";
 import neighborhoodRoutes from "./routes/neighborhoods.js";
 import signalRoutes from "./routes/signals.js";
 import rulesetRoutes from "./routes/rulesets.js";
-import evaluateRuleRoutes from "./routes/evaluateRule.js";
+import evaluateRuleRoutes from "./routes/rules.js";
 
 
 const app = express();

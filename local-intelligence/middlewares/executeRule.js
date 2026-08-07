@@ -13,11 +13,29 @@ export default function executeRule(rule, signal, run) {
   const action = actions[rule.action];
 
   if (!action) {
-    console.log(`Unknown Rule Action: ${rule.action}`);
-    return;
+    if (!action) {
+      run.technicalWarnings.push({
+        id: randomUUID(),
+
+        experimentRunId: run.id,
+
+        type: "UNKNOWN_RULE_ACTION",
+
+        message: `Unknown rule action '${rule.action}'.`,
+
+        ruleId: rule.id,
+
+        timestamp: new Date().toISOString(),
+      });
+
+      run.warningCount++;
+
+      return false;
+    }
   }
 
-  return action(signal, run);
+  action(signal, run);
+  return true;
 }
 
 // ====================================================
@@ -25,9 +43,7 @@ export default function executeRule(rule, signal, run) {
 // ====================================================
 
 function activate(signal, run) {
-  const agent = run.agents.find(
-    (a) => a.id === signal.targetAgentId,
-  );
+  const agent = run.agents.find((a) => a.id === signal.targetAgentId);
 
   if (!agent) return;
 
@@ -46,32 +62,70 @@ function block(signal) {
 // PROPAGATE
 // ====================================================
 
-function propagate(signal, run) {
+function selectNeighbors(neighbors, mode, run) {
+  switch (mode) {
+    case "random":
+      return neighbors.sort(() => Math.random() - 0.5).slice(0, 1);
 
+    case "broadcast":
+    default:
+      return neighbors;
+
+    case "priority":
+      return neighbors.sort((a, b) => {
+        const agentA = run.agents.find((agent) => agent.id === a);
+        const agentB = run.agents.find((agent) => agent.id === b);
+
+        return (agentB?.priority ?? 0) - (agentA?.priority ?? 0);
+      });
+  }
+}
+
+function propagate(signal, run) {
   if (signal.blocked) return;
 
   if ((signal.properties.ttl ?? 0) <= 0) {
+    run.technicalWarnings.push({
+      id: randomUUID(),
+
+      experimentRunId: run.id,
+
+      type: "TTL_EXPIRED",
+
+      message: "Signal propagation stopped because TTL reached zero.",
+
+      signalId: signal.id,
+
+      timestamp: new Date().toISOString(),
+    });
+
+    run.warningCount++;
+
+    signal.status = "completed";
+
     return;
   }
 
-  const sourceAgent = run.agents.find(
-    (a) => a.id === signal.targetAgentId,
-  );
+  const sourceAgent = run.agents.find((a) => a.id === signal.targetAgentId);
 
   if (!sourceAgent) return;
 
   if (!sourceAgent.neighborhoodIds?.length) return;
 
-  for (const neighborhoodId of sourceAgent.neighborhoodIds) {
+  const propagationMode = signal.properties?.propagationMode ?? "broadcast";
 
-    const neighborhood = run.neighborhoods.find(
-      (n) => n.id === neighborhoodId,
-    );
+  let propagated = false;
+
+  for (const neighborhoodId of sourceAgent.neighborhoodIds) {
+    const neighborhood = run.neighborhoods.find((n) => n.id === neighborhoodId);
 
     if (!neighborhood) continue;
 
-    for (const neighborId of neighborhood.agentIds) {
+    let neighbors = [...neighborhood.agentIds];
 
+    neighbors = selectNeighbors(neighbors, propagationMode, run);
+
+    for (const neighborId of neighbors) {
       // ---------------------------------------
       // Skip invalid targets
       // ---------------------------------------
@@ -95,7 +149,6 @@ function propagate(signal, run) {
       // ---------------------------------------
 
       const propagatedSignal = {
-
         id: randomUUID(),
 
         experimentRunId: run.id,
@@ -111,17 +164,14 @@ function propagate(signal, run) {
         payload: structuredClone(signal.payload),
 
         properties: {
-            ...signal.properties,
-            ttl: signal.properties.ttl - 1,
-            hopCount: (signal.properties.hopCount ?? 0) + 1,
+          ...signal.properties,
+          ttl: signal.properties.ttl - 1,
+          hopCount: (signal.properties.hopCount ?? 0) + 1,
         },
 
         status: "created",
 
-        visitedAgents: [
-          ...signal.visitedAgents,
-          neighborId,
-        ],
+        visitedAgents: [...signal.visitedAgents, neighborId],
 
         timestamp: new Date().toISOString(),
 
@@ -130,8 +180,13 @@ function propagate(signal, run) {
 
       run.signals.push(propagatedSignal);
 
+      propagated = true;
+
       processSignal(propagatedSignal, run);
     }
+  }
+  if (propagated) {
+    signal.status = "propagated";
   }
 }
 // ====================================================
@@ -139,10 +194,7 @@ function propagate(signal, run) {
 // ====================================================
 
 function sync(signal, run) {
-
-  const targetAgent = run.agents.find(
-    (a) => a.id === signal.targetAgentId,
-  );
+  const targetAgent = run.agents.find((a) => a.id === signal.targetAgentId);
 
   if (!targetAgent) return;
 
@@ -153,10 +205,7 @@ function sync(signal, run) {
   if (!neighborhood) return;
 
   for (const agentId of neighborhood.agentIds) {
-
-    const agent = run.agents.find(
-      (a) => a.id === agentId,
-    );
+    const agent = run.agents.find((a) => a.id === agentId);
 
     if (!agent) continue;
 

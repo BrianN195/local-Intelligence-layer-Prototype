@@ -42,10 +42,10 @@ router.post("/signals", (req, res) => {
     targetAgentId: req.body.targetAgentId,
     payload: req.body.payload || {},
     properties: {
-      strength: req.body.properties?.strength ?? 1,
-      priority: req.body.properties?.priority ?? "normal",
+      priorityMode: req.body.properties?.priorityMode ?? "highest",
       ttl: req.body.properties?.ttl ?? 10,
       hopCount: req.body.properties?.hopCount ?? 0,
+      propagationMode: req.body.properties?.propagationMode ?? "broadcast",
     },
     status: req.body.status || "created",
     visitedAgents: [req.body.sourceAgentId],
