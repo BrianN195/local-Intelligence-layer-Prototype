@@ -111,8 +111,9 @@ router.post("/neighborhoods/:id/agents", (req, res) => {
         error: "Agent is already in another neighborhood.",
       });
       continue;
+    }
 
-    if (!isValidPosition(agent.position.row, agent.position.col)) {
+    if (!isValidPosition(row, col)) {
       errors.push({
         agentId,
         error: `Agent position is out of bounds, must be within row 1-${GRID_ROWS_BOUND} and col 1-${GRID_COLS_BOUND}.`,
@@ -142,9 +143,10 @@ router.post("/neighborhoods/:id/agents", (req, res) => {
 
     agent.neighborhoodId = neighborhood.id;
     agent.position = {row, col}
+    assigned.push(agent.id);
   }
 
-  res.json(neighborhood);
+  res.json({ neighborhood, assigned, errors });
 });
 
 export default router;

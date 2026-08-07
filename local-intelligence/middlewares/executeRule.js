@@ -1,4 +1,4 @@
-import { processSignal } from "../engine";
+import { processSignal } from "../engine.js";
 
 export default function executeRule(rule, signal, run) {
 
