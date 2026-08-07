@@ -17,6 +17,18 @@ function isValidPosition(row, col) {
   )
 }
 
+// global bounds, inclusive and 1-indexed, e.g. rows 1-3 / cols 4-6
+function isValidBounds(b) {
+  return (
+    b &&
+    [b.rowStart, b.rowEnd, b.colStart, b.colEnd].every(
+      (v) => Number.isInteger(v) && v >= 1,
+    ) &&
+    b.rowStart <= b.rowEnd &&
+    b.colStart <= b.colEnd
+  );
+}
+
 /* ====================================================
    CREATE NEIGHBORHOOD
 ==================================================== */
@@ -31,9 +43,19 @@ router.post("/neighborhoods", (req, res) => {
     });
   }
 
+  // optional for now so existing callers keep working
+  const bounds = req.body.bounds ?? null;
+
+  if (bounds && !isValidBounds(bounds)) {
+    return res.status(400).json({
+      error: "bounds must have integer rowStart <= rowEnd and colStart <= colEnd, all >= 1.",
+    });
+  }
+
   const neighborhood = {
     id: randomUUID(),
     experimentRunId: run.id,
+    bounds,
     agentIds: [],
   };
 
