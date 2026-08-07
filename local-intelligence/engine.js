@@ -1,11 +1,13 @@
 import { randomUUID } from "crypto";
 import evaluateRules from "./middlewares/evaluateRules.js";
+import analyzeNeighborhood from "./middlewares/analyzeNeighborhood.js";
 import {
   logPropagation,
   logState,
   logTechnicalWarning,
   logFailure,
 } from "./middlewares/loggingFunc.js";
+import swarmBehavior from "./middlewares/swarmBehavior.js";
 //====================================================
 // MAIN ENGINE
 
@@ -17,6 +19,8 @@ export function processSignal(signal, run) {
   run.statistics.processedSignals = (run.statistics.processedSignals ?? 0) + 1;
 
   const target = run.agents.find((a) => a.id === signal.targetAgentId);
+
+  const neighborhoodData = analyzeNeighborhood(run, signal.targetAgentId);
 
   //====================================================
   // INVALID TARGET
@@ -51,7 +55,13 @@ export function processSignal(signal, run) {
   //====================================================
   // RULESET EVALUATION
 
-  const { triggeredRule, blocked } = evaluateRules(signal, run);
+  const { triggeredRule, blocked } = evaluateRules(
+    signal,
+    run,
+    neighborhoodData,
+  );
+
+  swarmBehavior(target, neighborhoodData);
 
   if (triggeredRule === null) {
     logFailure(

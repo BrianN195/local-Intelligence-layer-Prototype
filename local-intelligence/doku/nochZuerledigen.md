@@ -499,6 +499,16 @@ Dann entwickelt sich das Projekt von einer reinen Signal-Simulation zu einer ech
 
 ---
 
+## Phase 5
+
+- Pathfinder.js füllen
+- Wege finden
+- kürzesten und schnellsten (über ms delay) weg zum Ziel 
+- Emergent Behavior
+- Selbstorganisierende Regeln
+
+---
+
 # Erwartetes Ergebnis
 
 Nach Abschluss dieser Punkte besitzt der Prototype:

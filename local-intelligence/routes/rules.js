@@ -77,7 +77,7 @@ router.post("/rules", (req, res) => {
 
   const newRule = {
     id: randomUUID(),
-    
+
     enabled: true,
 
     type: rule.type,
@@ -87,6 +87,8 @@ router.post("/rules", (req, res) => {
     action: rule.action,
 
     threshold: rule.threshold ?? null,
+
+    minimumActiveNeighbors: rule.minimumActiveNeighbors ?? null,
   };
 
   ruleset.rules.push(newRule);
@@ -134,6 +136,8 @@ router.patch("/rules/:id", (req, res) => {
 
         rule.threshold = req.body.threshold ?? rule.threshold;
 
+        rule.minimumActiveNeighbors = req.body.minimumActiveNeighbors ?? rule.minimumActiveNeighbors;
+
         return res.json(rule);
       }
     }
@@ -168,14 +172,9 @@ router.delete("/rules/:id", (req, res) => {
    ENABLE / DISABLE RULE
 ==================================================== */
 router.patch("/rules/:id/enabled", (req, res) => {
-
   for (const run of store.experimentRuns) {
-
     for (const ruleset of run.rulesets) {
-
-      const rule = ruleset.rules.find(
-        (r) => r.id === req.params.id
-      );
+      const rule = ruleset.rules.find((r) => r.id === req.params.id);
 
       if (!rule) continue;
 
@@ -188,7 +187,6 @@ router.patch("/rules/:id/enabled", (req, res) => {
   res.status(404).json({
     error: "Rule not found",
   });
-
 });
 
 export default router;

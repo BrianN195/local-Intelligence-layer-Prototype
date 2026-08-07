@@ -1,6 +1,6 @@
 import executeRule from "./executeRule.js";
 
-export default function evaluateRules(signal, run) {
+export default function evaluateRules(signal, run, neighborhoodData) {
   let triggeredRule = null;
 
   const ruleset = run.rulesets?.find((r) => r.active);
@@ -20,6 +20,14 @@ export default function evaluateRules(signal, run) {
     if (
       rule.threshold !== undefined &&
       (signal.payload?.strength ?? 0) < rule.threshold
+    ) {
+      continue;
+    }
+
+    if (
+      rule.minimumActiveNeighbors !== undefined &&
+      neighborhoodData &&
+      neighborhoodData.activeAgents < rule.minimumActiveNeighbors
     ) {
       continue;
     }
