@@ -1,117 +1,282 @@
-# Proposal: Local Neighborhood Model without Overlapping Neighborhoods
+# Proposal: Intelligent Signal Routing for the Local Intelligence Layer
 
 ## Motivation
 
-I think that allowing agents to belong to multiple overlapping Neighborhoods is not the best approach.
+The current architecture already provides a strong foundation:
 
-Instead, every Agent should belong to exactly one Neighborhood. This makes ownership clear, avoids duplicate processing, and simplifies state management.
+- Every Agent belongs to exactly one Neighborhood.
+- Neighborhoods form an explicit graph through Neighborhood-to-Neighborhood connections.
+- Signals can propagate between connected Neighborhoods.
 
-Communication between Neighborhoods should happen through explicit Neighborhood-to-Neighborhood connections instead of shared Agents.
+The next logical step is to make signal propagation **intelligent**.
+
+Instead of simply forwarding signals to every reachable Neighbor, a Signal should be capable of selecting an efficient route to its destination.
+
+This transforms propagation from simple flooding into goal-oriented distributed routing.
 
 ---
-## **File Overview**
 
-* **Routes folder:** Contains the API endpoints for:
+# Current Situation
 
-  * Creating agents
-  * Updating an agent's state
-  * Creating neighborhoods
-  * Adding agents to neighborhoods
-  * Creating an experiment run
-  * Retrieving the experiment run summary
-  * Exporting experiment run data
-  * Retrieving experiment metrics
-  * Retrieving experiment logs
-  * Analyzing collective behavior
-  * Retrieving collective behavior results only
-  * Sending signals
+The current propagation engine forwards a Signal from one Agent to neighboring Agents.
 
-* **app.js:** Should be self-explanatory. It initializes and configures the application.
+When a Signal reaches a Neighborhood boundary, it may continue into one of the connected Neighborhoods.
 
-* **engine.js:** The core of the signal propagation system. It contains the logging functions as well as `processSignal`, which is the main function responsible for processing and propagating signals.
+Conceptually this looks like:
 
-* **metrics.js:** Contains the functions responsible for calculating and collecting experiment metrics.
-
-* **seedScript.js:**
-  During development, I usually created agents and neighborhoods manually using Postman. However, creating and assigning **81 agents across 9 neighborhoods** by hand would have required a large number of API requests. To simplify this process, I created this script. Using the existing endpoints and the current implementation, it automatically generates a **9×9 agent setup distributed across 9 neighborhoods**.
-
-* **store.js:** Used to simulate the database.
-
-
-## Neighborhood Structure
-
-Each Neighborhood represents a local area containing its own Agents.
-
-For example, every Neighborhood could contain a local **3×3 grid**:
-
-```
-1 2 3
-4 5 6
-7 8 9
+```text
+Neighborhood A
+        │
+        ▼
+Neighborhood B
+        │
+        ▼
+Neighborhood C
 ```
 
-The Agent positions are **local coordinates** inside the Neighborhood only.
+This approach works well for local propagation but becomes inefficient as the experiment grows.
 
-For example:
+---
+
+# The Problem
+
+Imagine an experiment consisting of dozens or hundreds of Neighborhoods.
+
+A Signal starts inside **Neighborhood 1**.
+
+Its destination is **Neighborhood 10**.
+
+Without routing intelligence the Signal has no knowledge of where the destination is.
+
+Instead, it propagates step by step through the graph.
+
+Possible consequences:
+
+- unnecessary propagation
+- duplicated work
+- additional latency
+- increased CPU usage
+- unnecessary memory consumption
+- excessive propagation events
+
+As the experiment scales, this becomes increasingly inefficient.
+
+---
+
+# Routing Targets
+
+A Signal should be able to specify its destination.
+
+Two destination types are useful.
+
+## Target Neighborhood
 
 ```json
 {
-  "position": {
-    "row": 2,
-    "col": 3
-  }
+  "targetNeighborhoodId": "NH10"
 }
 ```
 
-These coordinates have no meaning outside the Neighborhood.
+The objective is to deliver the Signal into a specific Neighborhood.
 
 ---
 
-## Global Neighborhood Layout
+## Target Agent
 
-Although Agent positions remain local, Neighborhoods themselves still exist inside a larger global layout.
-
-Each Neighborhood therefore stores global bounds that describe where it is located in the overall experiment.
-
-Example:
-
-```
-+-----+-----+-----+
-| N00 | N01 | N02 |
-+-----+-----+-----+
-| N10 | N11 | N12 |
-+-----+-----+-----+
-| N20 | N21 | N22 |
-+-----+-----+-----+
+```json
+{
+  "targetAgentId": "agent-275"
+}
 ```
 
-Example bounds:
+The system first determines which Neighborhood currently owns the Agent.
 
-```
-N00
-rows 1-3
-cols 1-3
-
-N01
-rows 1-3
-cols 4-6
-
-N10
-rows 4-6
-cols 1-3
+```text
+Agent
+      ↓
+Neighborhood
+      ↓
+Routing
 ```
 
-These bounds are used only to determine which Neighborhoods are adjacent.
-
-Agents themselves still only know their local coordinates.
+Because every Agent belongs to exactly one Neighborhood, this lookup is straightforward.
 
 ---
 
-## Explicit Neighborhood Connections
+# Why Agent Lookup Is Not Expensive
 
-Neighborhoods should explicitly know their neighboring Neighborhoods.
+At first glance it may seem that searching for an Agent before routing adds another expensive operation.
+
+However, in practice this is usually negligible.
+
+The process becomes:
+
+```text
+Agent ID
+      ↓
+Lookup Neighborhood
+      ↓
+Calculate Route
+```
+
+If Agents are stored in a hash map or indexed structure, the lookup is effectively constant time.
+
+The expensive operation is not locating the Agent.
+
+The expensive part is searching through the Neighborhood graph.
+
+Therefore supporting both destination types introduces very little additional overhead.
+
+---
+
+# Intelligent Routing
+
+Instead of forwarding blindly, the Signal should calculate a route through the Neighborhood graph.
 
 Example:
+
+```text
+NH01
+ │
+ ▼
+NH04
+ │
+ ▼
+NH08
+ │
+ ▼
+NH10
+```
+
+The calculated route is stored inside the Signal.
+
+Example:
+
+```json
+{
+  "route": [
+    "NH01",
+    "NH04",
+    "NH08",
+    "NH10"
+  ]
+}
+```
+
+During propagation the Signal simply follows the planned route.
+
+---
+
+# Multiple Routing Strategies
+
+Different experiments may require different routing behavior.
+
+Possible strategies include:
+
+- shortest path
+- lowest latency
+- lowest propagation cost
+- highest bandwidth
+- highest reliability
+- minimum hop count
+
+The routing strategy could therefore become part of the Signal itself.
+
+Example:
+
+```json
+{
+  "routingStrategy": "lowestLatency"
+}
+```
+
+---
+
+# Connection Metadata
+
+Neighborhood connections can contain additional information.
+
+Example:
+
+```json
+{
+  "targetNeighborhoodId": "NH05",
+  "latency": 12,
+  "bandwidth": 100,
+  "packetLoss": 0.01,
+  "cost": 2
+}
+```
+
+Instead of treating every connection equally, routing decisions can consider real connection quality.
+
+---
+
+# Dynamic Route Recalculation
+
+Experiments are dynamic.
+
+Connections may change while a Signal is travelling.
+
+Examples include:
+
+- Neighborhood unavailable
+- Server offline
+- High latency
+- Congestion
+- Temporary connection failure
+
+Instead of failing immediately, the Signal can calculate a new route from its current position.
+
+---
+
+# Future Distributed Routing
+
+A more advanced version would avoid calculating the complete path at the beginning.
+
+Instead, each Neighborhood only decides the next hop based on local information.
+
+Example:
+
+```text
+Signal
+   │
+   ▼
+Neighborhood A
+   │
+ chooses B
+   ▼
+Neighborhood B
+   │
+ chooses D
+   ▼
+Neighborhood D
+```
+
+This resembles routing in distributed computer networks and enables adaptive behavior.
+
+---
+
+# Possible Signal Extensions
+
+```json
+{
+  "targetNeighborhoodId": "...",
+  "targetAgentId": "...",
+
+  "route": [],
+
+  "currentHop": 0,
+
+  "routingStrategy": "shortest",
+
+  "routeCalculated": true
+}
+```
+
+---
+
+# Possible Neighborhood Extensions
 
 ```json
 {
@@ -120,90 +285,92 @@ Example:
     "south": "...",
     "east": "...",
     "west": "..."
-  }
+  },
+
+  "connections": [
+    {
+      "targetNeighborhoodId": "...",
+      "latency": 15,
+      "cost": 2,
+      "bandwidth": 100
+    }
+  ]
 }
 ```
 
-Connections can be generated automatically by comparing the global bounds of two Neighborhoods.
+---
 
-For example:
+# Possible Routing Algorithms
 
-* same rows + adjacent columns → east / west
-* same columns + adjacent rows → north / south
+Different algorithms become useful depending on the available information.
 
-This creates a graph of directly connected Neighborhoods.
+| Algorithm | Best suited for |
+|------------|-----------------|
+| Breadth-First Search (BFS) | Fewest Neighborhood hops |
+| Dijkstra | Weighted routing (latency, cost) |
+| A* | Spatial Neighborhood layouts with coordinates |
+| Bellman-Ford | Dynamic edge costs |
+| Link-State Routing | Large distributed experiments |
+| Reinforcement Learning | Future adaptive swarm routing |
+
+For the current prototype:
+
+- BFS is sufficient for shortest-path routing.
+- Dijkstra becomes useful once weighted connections (latency, cost, bandwidth) are introduced.
 
 ---
 
-## Advantages
+# Relationship to the Existing Neighborhood Proposal
 
-Compared to overlapping Neighborhoods, this approach offers several benefits:
+This proposal builds directly upon the existing Neighborhood architecture.
 
-* Every Agent belongs to exactly one Neighborhood.
-* No duplicated Agent membership.
-* Simpler synchronization.
-* Clear ownership of Agent state.
-* Explicit communication paths between Neighborhoods.
-* Easier scaling to larger environments.
-* More predictable propagation algorithms.
+The previous proposal introduced:
 
----
+- one Agent per Neighborhood
+- explicit Neighborhood ownership
+- explicit Neighborhood connections
+- graph-based Neighborhood topology
 
-## Future Possibilities
+This proposal extends that architecture by enabling Signals to use those Neighborhood connections intelligently.
 
-Since every Neighborhood knows its adjacent Neighborhoods, future propagation algorithms can move information between Neighborhoods without requiring overlapping Agent memberships.
+No redesign of the Neighborhood model is required.
 
-For example:
-
-```
-Neighborhood A
-      │
-      ▼
-Neighborhood B
-      │
-      ▼
-Neighborhood C
-```
-
-Signals, events, or aggregated state could be forwarded only to directly connected Neighborhoods.
-
-This creates a clean graph-based structure that is easier to extend while keeping each Neighborhood internally independent.
-
-# Olivia – Agent Layer
-
-Most of the Agent functionality already exists and should only require minor adjustments.
-
-### Existing functionality
-
-* Register Agent endpoint
-* Update Agent State endpoint
-* Agent State History
-
-### Required changes
-
-* Ensure an Agent can belong to **only one** Neighborhood.
-* Store the assigned `neighborhoodId`.
-* Keep Agent positions local to the Neighborhood (e.g. row 1–3, col 1–3).
-* Prevent assigning an Agent to multiple Neighborhoods.
-* Adapt the existing Agent endpoints where necessary to support the revised Neighborhood architecture.
+Instead, the existing graph becomes the routing infrastructure.
 
 ---
 
-# William – Neighborhood Layer
+# Long-Term Vision
 
-Most Neighborhood functionality already exists and should be extended rather than redesigned.
+Introducing intelligent routing opens the door to advanced swarm behavior.
 
-### Existing functionality
+Possible future developments include:
 
-* Create Neighborhood endpoint
-* Add Agent(s) to Neighborhood endpoint
+- adaptive routing
+- congestion avoidance
+- self-healing communication
+- distributed path discovery
+- collaborative routing between Neighborhoods
+- decentralized decision making
+- load balancing
+- predictive routing
+- autonomous optimization
+- emergent communication patterns
 
-### Required changes
+These capabilities move the Local Intelligence Layer beyond deterministic signal propagation toward a distributed system capable of self-organizing communication.
 
-* Keep Agent membership exclusive.
-* Store the list of Agents belonging to each Neighborhood.
-* Add an endpoint for connecting Neighborhoods.
-* Store neighboring Neighborhood references.
-* Store metadata about neighboring Neighborhoods (e.g. direction and distance).
-* Use global Neighborhood bounds to determine adjacency and establish Neighborhood connections.
-* Adapt the existing Neighborhood endpoints to support the revised architecture.
+---
+
+# Expected Benefits
+
+Compared to simple propagation, intelligent routing offers:
+
+- fewer propagation events
+- reduced computational overhead
+- lower network traffic
+- faster signal delivery
+- better scalability
+- improved fault tolerance
+- more realistic swarm communication
+- foundation for collective intelligence
+- foundation for emergent behavior
+- foundation for future self-organizing algorithms
