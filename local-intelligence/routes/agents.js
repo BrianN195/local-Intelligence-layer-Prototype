@@ -25,6 +25,8 @@ router.post("/agents", (req, res) => {
 
     neighborhoodIds: [],
 
+    neighborhoodId: null,
+
     position: req.body.position || {
       x: 0,
       y: 0,

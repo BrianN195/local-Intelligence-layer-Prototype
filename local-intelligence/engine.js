@@ -122,7 +122,10 @@ export function processSignal(signal, run) {
     localStateAfter: target.stateId,
     delayMs: Date.now() - startTime,
   });
+
   run.statistics.successfulSignals =
     (run.statistics.successfulSignals ?? 0) + 1;
+
   signal.status = "completed";
 }
+

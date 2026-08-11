@@ -1,5 +1,4 @@
 import { randomUUID } from "crypto";
-import { processSignal } from "../engine.js";
 import { getStateId } from "../stateHelpers.js";
 
 const actions = {
