@@ -1,4 +1,3 @@
-import { randomUUID } from "crypto";
 import evaluateRules from "./middlewares/evaluateRules.js";
 import analyzeNeighborhood from "./middlewares/analyzeNeighborhood.js";
 import {
@@ -8,6 +7,23 @@ import {
   logFailure,
 } from "./middlewares/loggingFunc.js";
 import swarmBehavior from "./middlewares/swarmBehavior.js";
+import analyzeCollectiveIntelligence from "./middlewares/collectiveIntelligence.js";
+import detectEmergentBehavior from "./middlewares/detectEmergentBehavior.js";
+
+export function analyzeCollectiveState(run) {
+  const collectiveIntelligence =
+    analyzeCollectiveIntelligence(run);
+
+  const emergentBehavior =
+    detectEmergentBehavior(run);
+
+  return {
+    collectiveIntelligence,
+    emergentBehavior,
+  };
+}
+//wird wahrscheinlich noch verschoben --TODO--
+
 //====================================================
 // MAIN ENGINE
 
@@ -20,7 +36,7 @@ export function processSignal(signal, run) {
 
   const target = run.agents.find((a) => a.id === signal.targetAgentId);
 
-  const neighborhoodData = analyzeNeighborhood(run, signal.targetAgentId);
+  
 
   //====================================================
   // INVALID TARGET
@@ -33,18 +49,21 @@ export function processSignal(signal, run) {
       signalId: signal.id,
       targetAgentId: signal.targetAgentId,
     });
+
     logPropagation(run, signal, signal.sourceAgentId, signal.targetAgentId, {
       status: "blocked",
       ruleTriggered: null,
       localStateBefore: null,
       localStateAfter: null,
       sourceState,
-      targetState,
+      targetState: null,
       delayMs: Date.now() - startTime,
     });
 
     return;
   }
+
+  const neighborhoodData = analyzeNeighborhood(run, signal.targetAgentId);
 
   const previousState = target.stateId;
 
@@ -61,7 +80,13 @@ export function processSignal(signal, run) {
     neighborhoodData,
   );
 
-  swarmBehavior(target, neighborhoodData);
+  let swarmStateChanged = false;
+
+  if (previousState === target.stateId && !triggeredRule) {
+    swarmBehavior(target, neighborhoodData);
+
+    swarmStateChanged = previousState !== target.stateId;
+  }
 
   if (triggeredRule === null) {
     logFailure(
@@ -106,9 +131,10 @@ export function processSignal(signal, run) {
       target.stateId,
       signal.id,
       triggeredRule,
+      swarmStateChanged ? "swarm_behavior" : "rule_activate",
     );
-    run.statistics.stateChanges = (run.statistics.stateChanges ?? 0) + 1;
   }
+  // logState noch anpassen!!!! --TODO--
 
   //====================================================
   // PROPAGATION EVENT LOG
@@ -128,4 +154,3 @@ export function processSignal(signal, run) {
 
   signal.status = "completed";
 }
-

@@ -2,6 +2,7 @@ import express from "express";
 import { store } from "../store.js";
 import { randomUUID } from "crypto";
 import { calculateMetrics } from "../metrics.js";
+import { analyzeCollectiveState } from "../engine.js";
 const router = express.Router();
 /* ====================================================
    CREATE EXPERIMENT RUN
@@ -282,4 +283,37 @@ router.patch("/experiment-runs/:id/finish", (req, res) => {
 
   res.json(run);
 });
+
+router.post("/experiment-runs/:id/collective-intelligence", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.params.id,
+  );
+
+  if (!run) {
+    return res.status(404).json({
+      error: "ExperimentRun not found",
+    });
+  }
+
+  const analysis = analyzeCollectiveState(run);
+
+  const result = {
+    id: randomUUID(),
+
+    experimentRunId: run.id,
+
+    type: "collective-analysis",
+
+    timestamp: new Date().toISOString(),
+
+    collectiveIntelligence: analysis.collectiveIntelligence,
+
+    emergentBehavior: analysis.emergentBehavior,
+  };
+
+  run.collectiveBehaviorResults.push(result);
+
+  res.status(201).json(result);
+});
+
 export default router;
