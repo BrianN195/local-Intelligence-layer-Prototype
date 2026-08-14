@@ -6,7 +6,7 @@ export function logState(
   previousState,
   newState,
   signalId,
-  triggeredRule,
+  triggeredRules,
   reason = "rule_activate",
 ) {
   run.stateHistory.push({
@@ -18,7 +18,7 @@ export function logState(
 
     signalId,
 
-    triggeredRule,
+    triggeredRules,
 
     previousState,
 
@@ -68,7 +68,7 @@ export function logPropagation(run, signal, sourceAgentId, targetAgentId, data) 
 
     targetState: data.targetState,
 
-    ruleTriggered: data.ruleTriggered,
+    triggeredRules: data.triggeredRules ?? [],
   });
   run.statistics.propagationCount++;
 }

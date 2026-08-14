@@ -1,13 +1,13 @@
 import executeRule from "./executeRule.js";
 
 export default function evaluateRules(signal, run, neighborhoodData) {
-  let triggeredRule = null;
+  let triggeredRules = [];
 
   const ruleset = run.rulesets?.find((r) => r.active);
 
   if (!ruleset?.rules?.length) {
     return {
-      triggeredRule: null,
+      triggeredRules: [],
       blocked: false,
     };
   }
@@ -32,7 +32,7 @@ export default function evaluateRules(signal, run, neighborhoodData) {
       continue;
     }
 
-    triggeredRule = rule.id;
+    triggeredRules.push(rule.id);
 
     executeRule(rule, signal, run);
 
@@ -42,7 +42,7 @@ export default function evaluateRules(signal, run, neighborhoodData) {
   }
 
   return {
-    triggeredRule,
+    triggeredRules,
     blocked: signal.blocked,
   };
 }

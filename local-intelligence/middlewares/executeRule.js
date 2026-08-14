@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { getStateId } from "../stateHelpers.js";
-
+import { processSignal } from "../engine.js";
+import { canPropagateToNeighborhood } from "./propagationScope.js";
 const actions = {
   activate,
   propagate,
@@ -9,31 +10,24 @@ const actions = {
 };
 
 export default function executeRule(rule, signal, run) {
+  const strength = signal.payload?.strength ?? 0;
+
+  if (
+    rule.threshold !== undefined &&
+    rule.threshold !== null &&
+    strength < rule.threshold
+  ) {
+    return false;
+  }
+
   const action = actions[rule.action];
 
   if (!action) {
-    if (!action) {
-      run.technicalWarnings.push({
-        id: randomUUID(),
-
-        experimentRunId: run.id,
-
-        type: "UNKNOWN_RULE_ACTION",
-
-        message: `Unknown rule action '${rule.action}'.`,
-
-        ruleId: rule.id,
-
-        timestamp: new Date().toISOString(),
-      });
-
-      run.warningCount++;
-
-      return false;
-    }
+    return false;
   }
 
   action(signal, run);
+
   return true;
 }
 
@@ -42,11 +36,19 @@ export default function executeRule(rule, signal, run) {
 // ====================================================
 
 function activate(signal, run) {
-  const agent = run.agents.find((a) => a.id === signal.targetAgentId);
+  const agent = run.agents.find(
+    (a) => a.id === signal.targetAgentId,
+  );
 
   if (!agent) return;
 
-  agent.stateId = getStateId("active");
+  const activeStateId = getStateId("active");
+
+  if (agent.stateId === activeStateId) {
+    return;
+  }
+
+  agent.stateId = activeStateId;
 }
 
 // ====================================================
@@ -83,6 +85,9 @@ function selectNeighbors(neighbors, mode, run) {
 function propagate(signal, run) {
   if (signal.blocked) return;
 
+  // ====================================================
+  // TTL CHECK
+
   if ((signal.properties.ttl ?? 0) <= 0) {
     run.technicalWarnings.push({
       id: randomUUID(),
@@ -105,28 +110,64 @@ function propagate(signal, run) {
     return;
   }
 
-  const sourceAgent = run.agents.find((a) => a.id === signal.targetAgentId);
+  // ====================================================
+  // FIND CURRENT AGENT
+
+  const sourceAgent = run.agents.find(
+    (a) => a.id === signal.targetAgentId,
+  );
 
   if (!sourceAgent) return;
 
-  if (!sourceAgent.neighborhoodIds?.length) return;
+  // ====================================================
+  // FIND CURRENT NEIGHBORHOOD
 
-  const propagationMode = signal.properties?.propagationMode ?? "broadcast";
+  if (!sourceAgent.neighborhoodId) return;
+
+  const currentNeighborhood = run.neighborhoods.find(
+    (n) => n.id === sourceAgent.neighborhoodId,
+  );
+
+  if (!currentNeighborhood) return;
+
+  // ====================================================
+  // PROPAGATION SETTINGS
+
+  const propagationMode =
+    signal.properties?.propagationMode ?? "broadcast";
+
+  const propagationScope =
+    signal.properties?.propagationScope ?? "neighborhood";
+
+  // ====================================================
+  // FIND ALLOWED NEIGHBORHOODS
+
+  const allowedNeighborhoods = run.neighborhoods.filter(
+    (targetNeighborhood) =>
+      canPropagateToNeighborhood(
+        signal,
+        currentNeighborhood,
+        targetNeighborhood,
+      ),
+  );
+
+  // ====================================================
+  // PROPAGATE TO AGENTS
 
   let propagated = false;
 
-  for (const neighborhoodId of sourceAgent.neighborhoodIds) {
-    const neighborhood = run.neighborhoods.find((n) => n.id === neighborhoodId);
-
-    if (!neighborhood) continue;
-
+  for (const neighborhood of allowedNeighborhoods) {
     let neighbors = [...neighborhood.agentIds];
 
-    neighbors = selectNeighbors(neighbors, propagationMode, run);
+    neighbors = selectNeighbors(
+      neighbors,
+      propagationMode,
+      run,
+    );
 
     for (const neighborId of neighbors) {
       // ---------------------------------------
-      // Skip invalid targets
+      // SKIP INVALID TARGETS
       // ---------------------------------------
 
       if (neighborId === sourceAgent.id) continue;
@@ -135,16 +176,21 @@ function propagate(signal, run) {
 
       if (signal.visitedAgents.includes(neighborId)) continue;
 
+      // ---------------------------------------
+      // PREVENT DUPLICATE SIGNALS
+      // ---------------------------------------
+
       const alreadyQueued = run.signals.some(
         (s) =>
-          s.parentSignalId === (signal.parentSignalId || signal.id) &&
+          s.parentSignalId ===
+            (signal.parentSignalId || signal.id) &&
           s.targetAgentId === neighborId,
       );
 
       if (alreadyQueued) continue;
 
       // ---------------------------------------
-      // Create propagated signal
+      // CREATE PROPAGATED SIGNAL
       // ---------------------------------------
 
       const propagatedSignal = {
@@ -154,7 +200,8 @@ function propagate(signal, run) {
 
         type: signal.type,
 
-        parentSignalId: signal.parentSignalId || signal.id,
+        parentSignalId:
+          signal.parentSignalId || signal.id,
 
         sourceAgentId: sourceAgent.id,
 
@@ -164,13 +211,19 @@ function propagate(signal, run) {
 
         properties: {
           ...signal.properties,
+
           ttl: signal.properties.ttl - 1,
-          hopCount: (signal.properties.hopCount ?? 0) + 1,
+
+          hopCount:
+            (signal.properties.hopCount ?? 0) + 1,
         },
 
         status: "created",
 
-        visitedAgents: [...signal.visitedAgents, neighborId],
+        visitedAgents: [
+          ...signal.visitedAgents,
+          neighborId,
+        ],
 
         timestamp: new Date().toISOString(),
 
@@ -184,16 +237,23 @@ function propagate(signal, run) {
       processSignal(propagatedSignal, run);
     }
   }
+
+  // ====================================================
+  // UPDATE SIGNAL STATUS
+
   if (propagated) {
     signal.status = "propagated";
   }
 }
+  // 
 // ====================================================
 // SYNC
 // ====================================================
 
 function sync(signal, run) {
-  const targetAgent = run.agents.find((a) => a.id === signal.targetAgentId);
+  const targetAgent = run.agents.find(
+    (a) => a.id === signal.targetAgentId,
+  );
 
   if (!targetAgent) return;
 
@@ -203,11 +263,20 @@ function sync(signal, run) {
 
   if (!neighborhood) return;
 
+  const synchronizedStateId =
+    getStateId("synchronized");
+
   for (const agentId of neighborhood.agentIds) {
-    const agent = run.agents.find((a) => a.id === agentId);
+    const agent = run.agents.find(
+      (a) => a.id === agentId,
+    );
 
     if (!agent) continue;
 
-    agent.stateId = getStateId("synchronized");
+    if (agent.stateId === synchronizedStateId) {
+      continue;
+    }
+
+    agent.stateId = synchronizedStateId;
   }
 }

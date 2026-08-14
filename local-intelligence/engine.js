@@ -9,6 +9,7 @@ import {
 import swarmBehavior from "./middlewares/swarmBehavior.js";
 import analyzeCollectiveIntelligence from "./middlewares/collectiveIntelligence.js";
 import detectEmergentBehavior from "./middlewares/detectEmergentBehavior.js";
+import analyzeRuleAdaptation from "./middlewares/selfOrganizingRules.js";
 
 export function analyzeCollectiveState(run) {
   const collectiveIntelligence =
@@ -17,9 +18,16 @@ export function analyzeCollectiveState(run) {
   const emergentBehavior =
     detectEmergentBehavior(run);
 
+  const ruleAdaptation =
+    analyzeRuleAdaptation(
+      run,
+      emergentBehavior,
+    );
+
   return {
     collectiveIntelligence,
     emergentBehavior,
+    ruleAdaptation,
   };
 }
 //wird wahrscheinlich noch verschoben --TODO--
@@ -35,8 +43,6 @@ export function processSignal(signal, run) {
   run.statistics.processedSignals = (run.statistics.processedSignals ?? 0) + 1;
 
   const target = run.agents.find((a) => a.id === signal.targetAgentId);
-
-  
 
   //====================================================
   // INVALID TARGET
@@ -74,11 +80,11 @@ export function processSignal(signal, run) {
   //====================================================
   // RULESET EVALUATION
 
-  const { triggeredRule, blocked } = evaluateRules(
-    signal,
-    run,
-    neighborhoodData,
-  );
+  const { triggeredRules, blocked } = evaluateRules(
+  signal,
+  run,
+  neighborhoodData,
+);
 
   let swarmStateChanged = false;
 
@@ -88,7 +94,7 @@ export function processSignal(signal, run) {
     swarmStateChanged = previousState !== target.stateId;
   }
 
-  if (triggeredRule === null) {
+  if (triggeredRules.length === 0) {
     logFailure(
       run,
       "NO_RULE_TRIGGERED",
@@ -104,7 +110,7 @@ export function processSignal(signal, run) {
     signal.status = "blocked";
     logPropagation(run, signal, signal.sourceAgentId, signal.targetAgentId, {
       status: "blocked",
-      ruleTriggered: triggeredRule,
+      ruleTriggered: triggeredRules,
       localStateBefore: previousState,
       localStateAfter: previousState,
       sourceState,
@@ -130,7 +136,7 @@ export function processSignal(signal, run) {
       previousState,
       target.stateId,
       signal.id,
-      triggeredRule,
+      triggeredRules,
       swarmStateChanged ? "swarm_behavior" : "rule_activate",
     );
   }
@@ -143,7 +149,7 @@ export function processSignal(signal, run) {
     status: "success",
     sourceState,
     targetState: target.stateId,
-    ruleTriggered: triggeredRule,
+    ruleTriggered: triggeredRules,
     localStateBefore: previousState,
     localStateAfter: target.stateId,
     delayMs: Date.now() - startTime,

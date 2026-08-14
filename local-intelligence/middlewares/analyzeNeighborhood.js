@@ -6,8 +6,7 @@ export default function analyzeNeighborhood(run, agentId) {
   }
 
   const neighborhood = run.neighborhoods.find(
-    (n) =>
-      n.id === agent.neighborhoodId || agent.neighborhoodIds?.includes(n.id),
+    (n) => n.id === agent.neighborhoodId,
   );
 
   if (!neighborhood) {
@@ -56,7 +55,7 @@ export default function analyzeNeighborhood(run, agentId) {
     inactiveAgents,
     synchronizedAgents,
 
-    activeRatio,
+    // activeRatio,
     inactiveRatio,
     synchronizedRatio,
 

@@ -3,6 +3,9 @@ import { store } from "../store.js";
 import { randomUUID } from "crypto";
 import { calculateMetrics } from "../metrics.js";
 import { analyzeCollectiveState } from "../engine.js";
+import runAutonomy from "../middlewares/runAutonomy.js";
+
+
 const router = express.Router();
 /* ====================================================
    CREATE EXPERIMENT RUN
@@ -285,9 +288,7 @@ router.patch("/experiment-runs/:id/finish", (req, res) => {
 });
 
 router.post("/experiment-runs/:id/collective-intelligence", (req, res) => {
-  const run = store.experimentRuns.find(
-    (r) => r.id === req.params.id,
-  );
+  const run = store.experimentRuns.find((r) => r.id === req.params.id);
 
   if (!run) {
     return res.status(404).json({
@@ -309,11 +310,41 @@ router.post("/experiment-runs/:id/collective-intelligence", (req, res) => {
     collectiveIntelligence: analysis.collectiveIntelligence,
 
     emergentBehavior: analysis.emergentBehavior,
+
+    ruleAdaptation: analysis.ruleAdaptation,
   };
+
 
   run.collectiveBehaviorResults.push(result);
 
   res.status(201).json(result);
 });
+
+/* ====================================================
+   RUN AUTONOMY TICK
+   only before the real automate is created
+==================================================== */
+
+router.post("/experiment-runs/:id/autonomy", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.params.id,
+  );
+
+  if (!run) {
+    return res.status(404).json({
+      error: "ExperimentRun not found",
+    });
+  }
+
+  const decisions = runAutonomy(run);
+
+  res.json({
+    experimentRunId: run.id,
+    agentCount: run.agents.length,
+    decisions,
+    timestamp: new Date().toISOString(),
+  });
+});
+
 
 export default router;

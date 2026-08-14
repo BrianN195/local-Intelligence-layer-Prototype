@@ -3,7 +3,7 @@ import { store } from "../store.js";
 import { randomUUID } from "crypto";
 
 const router = express.Router();
-
+// nnoch aufräumen (functions zur middleware) --TODO--
 // bounds depend on neighborhood grid size
 const GRID_ROWS_BOUND = 3; 
 const GRID_COLS_BOUND = 3; 
@@ -97,7 +97,7 @@ router.post("/neighborhoods", (req, res) => {
       algorithm: req.body.algorithm ?? null,
       communicationRange: req.body.communicationRange ?? null,
     },
-
+    // status oder state? aufjedenfall id --TODO--
     status: "active",
 
     metadata: {},
@@ -192,7 +192,7 @@ router.post("/neighborhoods/:id/agents", (req, res) => {
       continue;
     }
 
-    if (agent.status === "offline") {
+    if (agent.stateId === 6) {
       continue;
     }
 
@@ -207,6 +207,8 @@ router.post("/neighborhoods/:id/agents", (req, res) => {
 
   res.json({ neighborhood, assigned, errors });
 });
+
+//connect mal testen --TODO--
 
 /* ====================================================
    CONNECT NEIGHBORHOODS
