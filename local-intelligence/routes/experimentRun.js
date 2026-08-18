@@ -2,9 +2,9 @@ import express from "express";
 import { store } from "../store.js";
 import { randomUUID } from "crypto";
 import { calculateMetrics } from "../metrics.js";
-import { analyzeCollectiveState } from "../engine.js";
 import runAutonomy from "../middlewares/runAutonomy.js";
 import runAutonomyTicks from "../middlewares/autonomyScheduler.js";
+import {analyzeCollectiveState} from "../middlewares/analyzeCollectiveState.js"
 
 const router = express.Router();
 /* ====================================================

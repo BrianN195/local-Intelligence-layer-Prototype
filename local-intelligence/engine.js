@@ -10,28 +10,6 @@ import swarmBehavior from "./middlewares/swarmBehavior.js";
 import analyzeCollectiveIntelligence from "./middlewares/collectiveIntelligence.js";
 import detectEmergentBehavior from "./middlewares/detectEmergentBehavior.js";
 import analyzeRuleAdaptation from "./middlewares/selfOrganizingRules.js";
-
-export function analyzeCollectiveState(run) {
-  const collectiveIntelligence =
-    analyzeCollectiveIntelligence(run);
-
-  const emergentBehavior =
-    detectEmergentBehavior(run);
-
-  const ruleAdaptation =
-    analyzeRuleAdaptation(
-      run,
-      emergentBehavior,
-    );
-
-  return {
-    collectiveIntelligence,
-    emergentBehavior,
-    ruleAdaptation,
-  };
-}
-//wird wahrscheinlich noch verschoben --TODO--
-
 //====================================================
 // MAIN ENGINE
 
@@ -140,7 +118,7 @@ export function processSignal(signal, run) {
       swarmStateChanged ? "swarm_behavior" : "rule_activate",
     );
   }
-  // logState noch anpassen!!!! --TODO--
+  // logState noch anpassen!!!! --TODO-- //finished, noch prüfen
 
   //====================================================
   // PROPAGATION EVENT LOG

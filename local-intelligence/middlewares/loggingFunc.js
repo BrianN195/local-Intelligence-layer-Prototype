@@ -8,6 +8,7 @@ export function logState(
   signalId,
   triggeredRules,
   reason = "rule_activate",
+  swarmStateChanged
 ) {
   run.stateHistory.push({
     id: randomUUID(),
@@ -29,6 +30,8 @@ export function logState(
     reason,
 
     timestamp: new Date().toISOString(),
+
+    swarmStateChanged
   });
 }
 
