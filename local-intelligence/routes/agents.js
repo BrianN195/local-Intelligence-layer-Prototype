@@ -55,6 +55,7 @@ router.post("/agents", (req, res) => {
   res.status(201).json(agent);
 });
 /* UPDATE AGENT STATE */
+// frontend can create a button where a teilnehmer can set his state on inactive
 router.patch("/agents/:id/state", (req, res) => {
   const run = store.experimentRuns.find(
     (r) => r.id === req.body.experimentRunId,

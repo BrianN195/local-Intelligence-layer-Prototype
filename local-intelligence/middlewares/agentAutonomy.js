@@ -2,22 +2,28 @@ import { getStateId } from "../stateHelpers.js";
 
 
 
-export default function agentAutonomy(agent, neighborhoodData) {
+export default function agentAutonomy(
+  agent,
+  neighborhoodData,
+) {
   if (!agent || !neighborhoodData) {
     return null;
   }
 
   const activeNeighbors =
-    neighborhoodData.activeAgents ?? 0;
+    neighborhoodData.activeLocalNeighbors ?? 0;
 
-  const totalNeighbors =
-    neighborhoodData.agentCount ?? 0;
+  const localNeighborCount =
+    neighborhoodData.localNeighborCount ?? 0;
 
   // ----------------------------------------
   // HIGH LOCAL ACTIVITY
   // ----------------------------------------
 
-  if (activeNeighbors >= 3) {
+  if (
+    localNeighborCount > 0 &&
+    activeNeighbors >= 2
+  ) {
     return {
       action: "activate",
       reason: "high_local_activity",

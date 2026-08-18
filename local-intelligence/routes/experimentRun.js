@@ -4,7 +4,7 @@ import { randomUUID } from "crypto";
 import { calculateMetrics } from "../metrics.js";
 import { analyzeCollectiveState } from "../engine.js";
 import runAutonomy from "../middlewares/runAutonomy.js";
-
+import runAutonomyTicks from "../middlewares/autonomyScheduler.js";
 
 const router = express.Router();
 /* ====================================================
@@ -52,6 +52,7 @@ router.post("/experiment-runs/:id", (req, res) => {
     technicalWarnings: [],
     failureStates: [],
     experimentParticipants: [],
+    autonomyTicks: [],
 
     statistics: {
       observationCount: 0,
@@ -168,6 +169,8 @@ router.get("/experiment-runs/:id/logs", (req, res) => {
     failureStates: run.failureStates,
 
     experimentParticipants: run.experimentParticipants,
+
+    autonomyTicks: run.autonomyTicks,
   });
 });
 
@@ -314,7 +317,6 @@ router.post("/experiment-runs/:id/collective-intelligence", (req, res) => {
     ruleAdaptation: analysis.ruleAdaptation,
   };
 
-
   run.collectiveBehaviorResults.push(result);
 
   res.status(201).json(result);
@@ -326,9 +328,7 @@ router.post("/experiment-runs/:id/collective-intelligence", (req, res) => {
 ==================================================== */
 
 router.post("/experiment-runs/:id/autonomy", (req, res) => {
-  const run = store.experimentRuns.find(
-    (r) => r.id === req.params.id,
-  );
+  const run = store.experimentRuns.find((r) => r.id === req.params.id);
 
   if (!run) {
     return res.status(404).json({
@@ -346,5 +346,35 @@ router.post("/experiment-runs/:id/autonomy", (req, res) => {
   });
 });
 
+/* ====================================================
+   RUN AUTONOMY TICKS
+==================================================== */
+
+router.post("/experiment-runs/:id/autonomy/ticks", (req, res) => {
+  const run = store.experimentRuns.find((r) => r.id === req.params.id);
+
+  if (!run) {
+    return res.status(404).json({
+      error: "ExperimentRun not found",
+    });
+  }
+
+  const tickCount = Number(req.body.tickCount ?? 1);
+
+  if (!Number.isInteger(tickCount) || tickCount < 1 || tickCount > 100) {
+    return res.status(400).json({
+      error: "tickCount must be an integer between 1 and 100.",
+    });
+  }
+
+  const ticks = runAutonomyTicks(run, tickCount);
+
+  res.json({
+    experimentRunId: run.id,
+    tickCount: ticks.length,
+    ticks,
+    timestamp: new Date().toISOString(),
+  });
+});
 
 export default router;
