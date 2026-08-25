@@ -8,7 +8,18 @@
   Returns the full path including start and destination, or null if the
   destination cannot be reached.
 */
-export function findRoute(run, fromNeighborhoodId, toNeighborhoodId) {
+// weighted strategies (lowestLatency, lowestCost) need Dijkstra and
+// connection weights, so only hop-count routing is supported for now
+export const SUPPORTED_STRATEGIES = ["shortest"];
+
+export function findRoute(
+  run,
+  fromNeighborhoodId,
+  toNeighborhoodId,
+  strategy = "shortest",
+) {
+  if (!SUPPORTED_STRATEGIES.includes(strategy)) return null;
+
   if (!fromNeighborhoodId || !toNeighborhoodId) return null;
 
   if (fromNeighborhoodId === toNeighborhoodId) return [fromNeighborhoodId];

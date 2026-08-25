@@ -256,6 +256,8 @@ export function processSignal(signal, run) {
 
             currentHop: signal.currentHop + 1,
 
+            routingStrategy: signal.routingStrategy ?? "shortest",
+
             routeCalculated: signal.routeCalculated ?? false,
 
             visitedAgents: [...signal.visitedAgents, entryAgentId],

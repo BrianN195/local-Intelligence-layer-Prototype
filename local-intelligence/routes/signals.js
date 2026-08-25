@@ -2,7 +2,7 @@ import express from "express";
 import { store } from "../store.js";
 import { randomUUID } from "crypto";
 import { processSignal } from "../engine.js";
-import { findRoute } from "../routing.js";
+import { findRoute, SUPPORTED_STRATEGIES } from "../routing.js";
 const router = express.Router();
 
 /* ====================================================
@@ -53,13 +53,26 @@ router.post("/signals", (req, res) => {
     return res.status(404).json({ error: "Target Neighborhood not found" });
   }
 
+  const routingStrategy = req.body.routingStrategy ?? "shortest";
+
+  if (!SUPPORTED_STRATEGIES.includes(routingStrategy)) {
+    return res.status(400).json({
+      error: `Unsupported routingStrategy. Supported: ${SUPPORTED_STRATEGIES.join(", ")}`,
+    });
+  }
+
   // plan the route once, from the Neighborhood the signal starts in
   const sourceNeighborhoodId = run.agents.find(
     (a) => a.id === req.body.sourceId,
   )?.neighborhoodId ?? null;
 
   const route = destinationNeighborhoodId
-    ? findRoute(run, sourceNeighborhoodId, destinationNeighborhoodId)
+    ? findRoute(
+        run,
+        sourceNeighborhoodId,
+        destinationNeighborhoodId,
+        routingStrategy,
+      )
     : null;
 
   const signal = {
@@ -72,6 +85,7 @@ router.post("/signals", (req, res) => {
     targetNeighborhoodId: destinationNeighborhoodId,
     route: route ?? [],
     currentHop: 0,
+    routingStrategy,
     routeCalculated: Boolean(route),
     payload: req.body.payload ?? {},
     visitedAgents: [req.body.sourceId],
