@@ -47,6 +47,7 @@ router.post("/signals", (req, res) => {
       hopCount: req.body.properties?.hopCount ?? 0,
       propagationMode: req.body.properties?.propagationMode ?? "broadcast",
       propagationScope: req.body.propagationScope ?? "neighborhood",
+      propagationDirection: req.body.properties?.propagationDirection ?? null,
     },
     status: req.body.status || "created",
     visitedAgents: [req.body.sourceAgentId],

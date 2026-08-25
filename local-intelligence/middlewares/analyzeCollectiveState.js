@@ -1,6 +1,6 @@
-import analyzeCollectiveIntelligence from "./collectiveIntelligence";
-import detectEmergentBehavior from "./detectEmergentBehavior";
-import analyzeRuleAdaptation from "./selfOrganizingRules";
+import analyzeCollectiveIntelligence from "./collectiveIntelligence.js";
+import detectEmergentBehavior from "./detectEmergentBehavior.js";
+import analyzeRuleAdaptation from "./selfOrganizingRules.js";
 
 export function analyzeCollectiveState(run) {
   const collectiveIntelligence =

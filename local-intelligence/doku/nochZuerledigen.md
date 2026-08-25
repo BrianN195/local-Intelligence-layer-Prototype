@@ -509,6 +509,22 @@ Dann entwickelt sich das Projekt von einer reinen Signal-Simulation zu einer ech
 
 ---
 
+## Phase 6
+
+ - Logs müssen übersichtlicher werden!!
+ - Bisher ist das lesen der Logs ohne Code kenntnisse schlichtweg unmöglich
+ - Muss lesbarer werden
+ - Bei einem Log von "nur" 81 agents in 9 neighborhoods ist der response < 300KB bei nur 2 signalen, (einmal lokal einmal all propagation)
+ - muss kleiner werden
+ - "unnötige" Infos zusammenfassen
+ - besser sichtbar machen welche propagationen zu weclehm signal gehören
+
+---
+
+## Phase 7
+
+ - propagation sollte auch den state der agents ändern
+ - kleines frontend zur veranschaulichung?
 # Erwartetes Ergebnis
 
 Nach Abschluss dieser Punkte besitzt der Prototype:

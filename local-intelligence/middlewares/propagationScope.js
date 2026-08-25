@@ -49,62 +49,65 @@ export function canPropagateToNeighborhood(
     );
   }
 
-// ====================================================
-// DIRECTION
-// ====================================================
+  // ====================================================
+  // DIRECTION
+  // ====================================================
+  //unbedingt noch direction auf lowercase prüfen bzw setzen
+  if (scope === "direction") {
+    const direction = signal.properties?.propagationDirection;
 
-if (scope === "direction") {
-  const direction =
-    signal.properties?.propagationDirection;
+    if (!direction) {
+      return false;
+    }
 
-  if (!direction) {
-    return false;
+    if (currentNeighborhood.id === targetNeighborhood.id) {
+      return true;
+    }
+
+    return currentNeighborhood.neighbors?.some(
+      (neighbor) =>
+        neighbor.neighborhoodId === targetNeighborhood.id &&
+        neighbor.direction === direction,
+    );
   }
 
-  if (currentNeighborhood.id === targetNeighborhood.id) {
+  // ====================================================
+  // ROUTE
+  // ====================================================
+
+  if (scope === "route") {
+    const route = signal.properties?.propagationRoute ?? [];
+
+    if (!Array.isArray(route) || route.length === 0) {
+      return false;
+    }
+
+    const currentIndex = route.indexOf(currentNeighborhood.id);
+
+    const targetIndex = route.indexOf(targetNeighborhood.id);
+
+    if (currentIndex === -1 || targetIndex === -1) {
+      return false;
+    }
+
+    // Only allow the next neighborhood in the route
+    if (targetIndex !== currentIndex + 1) {
+      return false;
+    }
+
+    // Make sure the two neighborhoods are actually connected
+    return currentNeighborhood.neighbors?.some(
+      (neighbor) => neighbor.neighborhoodId === targetNeighborhood.id,
+    );
+  }
+
+  // ====================================================
+  // ALL NEIGHBORHOODS
+  // ====================================================
+
+  if (scope === "all") {
     return true;
   }
-
-  return currentNeighborhood.neighbors?.some(
-    (neighbor) =>
-      neighbor.neighborhoodId === targetNeighborhood.id &&
-      neighbor.direction === direction,
-  );
-}
-
-// ====================================================
-// ROUTE
-// ====================================================
-
-if (scope === "route") {
-  const route =
-    signal.properties?.propagationRoute ?? [];
-
-  if (!Array.isArray(route) || route.length === 0) {
-    return false;
-  }
-
-  const currentIndex =
-    route.indexOf(currentNeighborhood.id);
-
-  const targetIndex =
-    route.indexOf(targetNeighborhood.id);
-
-  if (currentIndex === -1 || targetIndex === -1) {
-    return false;
-  }
-
-  // Only allow the next neighborhood in the route
-  if (targetIndex !== currentIndex + 1) {
-    return false;
-  }
-
-  // Make sure the two neighborhoods are actually connected
-  return currentNeighborhood.neighbors?.some(
-    (neighbor) =>
-      neighbor.neighborhoodId === targetNeighborhood.id,
-  );
-}
   // ====================================================
   // GLOBAL
   // ====================================================

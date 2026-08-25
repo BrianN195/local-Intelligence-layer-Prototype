@@ -38,6 +38,8 @@ export default function analyzeCollectiveIntelligence(run) {
   const dominantRatio =
     dominantCount / totalAgents;
 
+  const consensus = dominantRatio >= 0.8;
+
   // ====================================================
   // NEIGHBORHOOD ANALYSIS
 

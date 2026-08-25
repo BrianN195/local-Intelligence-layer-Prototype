@@ -376,5 +376,76 @@ router.post("/experiment-runs/:id/autonomy/ticks", (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+/* ====================================================
+   Logs splitted in get Signals und get Propagation events und autonomy ticks
+==================================================== */
+/* ====================================================
+   SIGNALS
+==================================================== */
 
+router.get("/experiment-runs/:id/signals", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.params.id,
+  );
+
+  if (!run) {
+    return res.status(404).json({
+      error: "ExperimentRun not found",
+    });
+  }
+
+  res.json({
+    experimentRunId: run.id,
+    count: run.signals.length,
+    signals: run.signals,
+  });
+});
+/* ====================================================
+   PROPAGATION EVENTS
+==================================================== */
+
+router.get(
+  "/experiment-runs/:id/propagation-events",
+  (req, res) => {
+    const run = store.experimentRuns.find(
+      (r) => r.id === req.params.id,
+    );
+
+    if (!run) {
+      return res.status(404).json({
+        error: "ExperimentRun not found",
+      });
+    }
+
+    res.json({
+      experimentRunId: run.id,
+      count: run.propagationEvents.length,
+      propagationEvents: run.propagationEvents,
+    });
+  },
+);
+/* ====================================================
+   AUTONOMY TICKS
+==================================================== */
+
+router.get(
+  "/experiment-runs/:id/autonomy-ticks",
+  (req, res) => {
+    const run = store.experimentRuns.find(
+      (r) => r.id === req.params.id,
+    );
+
+    if (!run) {
+      return res.status(404).json({
+        error: "ExperimentRun not found",
+      });
+    }
+
+    res.json({
+      experimentRunId: run.id,
+      count: run.autonomyTicks.length,
+      autonomyTicks: run.autonomyTicks,
+    });
+  },
+);
 export default router;
