@@ -18,12 +18,49 @@ router.post("/signals", (req, res) => {
     });
   }
 
+  const { targetAgentId, targetNeighborhoodId } = req.body;
+
+  if (targetAgentId && targetNeighborhoodId) {
+    return res.status(400).json({
+      error: "Provide either targetAgentId or targetNeighborhoodId, not both",
+    });
+  }
+
+  // a signal aimed at an Agent is routed to the Neighborhood that owns it
+  let destinationNeighborhoodId = targetNeighborhoodId ?? null;
+
+  if (targetAgentId) {
+    const targetAgent = run.agents.find((a) => a.id === targetAgentId);
+
+    if (!targetAgent) {
+      return res.status(404).json({ error: "Target Agent not found" });
+    }
+
+    if (!targetAgent.neighborhoodId) {
+      return res.status(400).json({
+        error: "Target Agent does not belong to a Neighborhood",
+      });
+    }
+
+    destinationNeighborhoodId = targetAgent.neighborhoodId;
+  }
+
+  if (
+    destinationNeighborhoodId &&
+    !run.neighborhoods.some((n) => n.id === destinationNeighborhoodId)
+  ) {
+    return res.status(404).json({ error: "Target Neighborhood not found" });
+  }
+
   const signal = {
     id: randomUUID(),
     experimentRunId: run.id,
     type: req.body.type,
     sourceId: req.body.sourceId,
     targetId: req.body.targetId,
+    targetAgentId: targetAgentId ?? null,
+    targetNeighborhoodId: destinationNeighborhoodId,
+    payload: req.body.payload ?? {},
     visitedAgents: [req.body.sourceId],
     timestamp: new Date().toISOString()
   };
