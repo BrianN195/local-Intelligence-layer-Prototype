@@ -203,10 +203,16 @@ router.post("/neighborhoods/connect", (req, res) => {
 
       if (!direction) continue;
 
+      const distance = distanceBetween(a.bounds, b.bounds);
+
+      // weights for future weighted routing; defaults derive from the
+      // layout so every connection starts with usable values
       a.neighbors.push({
         neighborhoodId: b.id,
         direction,
-        distance: distanceBetween(a.bounds, b.bounds),
+        distance,
+        latency: distance,
+        cost: 1,
       });
     }
   }
@@ -216,6 +222,41 @@ router.post("/neighborhoods/connect", (req, res) => {
     skipped: run.neighborhoods.length - withBounds.length,
     neighborhoods: run.neighborhoods,
   });
+});
+
+/* ====================================================
+   UPDATE CONNECTION WEIGHTS
+==================================================== */
+router.patch("/neighborhoods/:id/connections/:targetId", (req, res) => {
+  const run = store.experimentRuns.find(
+    (r) => r.id === req.body.experimentRunId,
+  );
+
+  if (!run) {
+    return res.status(404).json({ error: "ExperimentRun not found" });
+  }
+
+  const neighborhood = run.neighborhoods.find((n) => n.id === req.params.id);
+
+  const connection = neighborhood?.neighbors.find(
+    (c) => c.neighborhoodId === req.params.targetId,
+  );
+
+  if (!connection) {
+    return res.status(404).json({ error: "Connection not found" });
+  }
+
+  for (const field of ["latency", "cost"]) {
+    if (req.body[field] === undefined) continue;
+
+    if (typeof req.body[field] !== "number" || req.body[field] < 0) {
+      return res.status(400).json({ error: `${field} must be a number >= 0` });
+    }
+
+    connection[field] = req.body[field];
+  }
+
+  res.json(connection);
 });
 
 /* ====================================================
