@@ -1,16 +1,32 @@
 /*
-  Shortest path through the Neighborhood graph.
+  Route planning through the Neighborhood graph.
 
-  Breadth-first search over the `neighbors` connections, which is enough
-  for hop-count routing. Weighted routing (latency, cost) would need
-  Dijkstra instead.
+  Dijkstra over the `neighbors` connections. Every strategy uses the same
+  search and only differs in which connection field is used as the weight,
+  so "shortest" is simply every connection weighted as one hop.
 
   Returns the full path including start and destination, or null if the
   destination cannot be reached.
 */
-// weighted strategies (lowestLatency, lowestCost) need Dijkstra and
-// connection weights, so only hop-count routing is supported for now
-export const SUPPORTED_STRATEGIES = ["shortest"];
+
+const WEIGHT_FIELDS = {
+  shortest: null,
+  lowestLatency: "latency",
+  lowestCost: "cost",
+};
+
+export const SUPPORTED_STRATEGIES = Object.keys(WEIGHT_FIELDS);
+
+function weightOf(link, strategy) {
+  const field = WEIGHT_FIELDS[strategy];
+
+  if (!field) return 1;
+
+  // connections without a usable weight fall back to one hop
+  return typeof link[field] === "number" && link[field] >= 0
+    ? link[field]
+    : 1;
+}
 
 export function findRoute(
   run,
@@ -24,28 +40,47 @@ export function findRoute(
 
   if (fromNeighborhoodId === toNeighborhoodId) return [fromNeighborhoodId];
 
-  const queue = [[fromNeighborhoodId]];
-  const seen = new Set([fromNeighborhoodId]);
+  const distance = new Map([[fromNeighborhoodId, 0]]);
+  const previous = new Map();
+  const settled = new Set();
 
-  while (queue.length) {
-    const path = queue.shift();
+  while (true) {
+    // cheapest neighborhood not settled yet
+    let current = null;
+    let currentDistance = Infinity;
 
-    const current = run.neighborhoods.find(
-      (n) => n.id === path[path.length - 1],
-    );
+    for (const [id, d] of distance) {
+      if (!settled.has(id) && d < currentDistance) {
+        current = id;
+        currentDistance = d;
+      }
+    }
 
-    for (const link of current?.neighbors ?? []) {
-      if (seen.has(link.neighborhoodId)) continue;
+    if (current === null) return null;
 
-      seen.add(link.neighborhoodId);
+    if (current === toNeighborhoodId) break;
 
-      const nextPath = [...path, link.neighborhoodId];
+    settled.add(current);
 
-      if (link.neighborhoodId === toNeighborhoodId) return nextPath;
+    const neighborhood = run.neighborhoods.find((n) => n.id === current);
 
-      queue.push(nextPath);
+    for (const link of neighborhood?.neighbors ?? []) {
+      if (settled.has(link.neighborhoodId)) continue;
+
+      const candidate = currentDistance + weightOf(link, strategy);
+
+      if (candidate < (distance.get(link.neighborhoodId) ?? Infinity)) {
+        distance.set(link.neighborhoodId, candidate);
+        previous.set(link.neighborhoodId, current);
+      }
     }
   }
 
-  return null;
+  const path = [toNeighborhoodId];
+
+  while (path[0] !== fromNeighborhoodId) {
+    path.unshift(previous.get(path[0]));
+  }
+
+  return path;
 }
