@@ -2,6 +2,7 @@ import express from "express";
 import { store } from "../store.js";
 import { randomUUID } from "crypto";
 import { processSignal } from "../engine.js";
+import { findRoute } from "../routing.js";
 const router = express.Router();
 
 /* ====================================================
@@ -52,6 +53,15 @@ router.post("/signals", (req, res) => {
     return res.status(404).json({ error: "Target Neighborhood not found" });
   }
 
+  // plan the route once, from the Neighborhood the signal starts in
+  const sourceNeighborhoodId = run.agents.find(
+    (a) => a.id === req.body.sourceId,
+  )?.neighborhoodId ?? null;
+
+  const route = destinationNeighborhoodId
+    ? findRoute(run, sourceNeighborhoodId, destinationNeighborhoodId)
+    : null;
+
   const signal = {
     id: randomUUID(),
     experimentRunId: run.id,
@@ -60,8 +70,13 @@ router.post("/signals", (req, res) => {
     targetId: req.body.targetId,
     targetAgentId: targetAgentId ?? null,
     targetNeighborhoodId: destinationNeighborhoodId,
+    route: route ?? [],
+    currentHop: 0,
+    routeCalculated: Boolean(route),
     payload: req.body.payload ?? {},
     visitedAgents: [req.body.sourceId],
+    visitedNeighborhoods: sourceNeighborhoodId ? [sourceNeighborhoodId] : [],
+    isEntry: true,
     timestamp: new Date().toISOString()
   };
 

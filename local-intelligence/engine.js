@@ -186,6 +186,13 @@ export function processSignal(signal, run) {
 
           visitedAgents: [...signal.visitedAgents, neighborId],
 
+          targetNeighborhoodId: signal.targetNeighborhoodId ?? null,
+
+          visitedNeighborhoods: [...(signal.visitedNeighborhoods ?? [])],
+
+          // only the Agent a signal first lands on may cross a boundary
+          isEntry: false,
+
           payload: {
             strength: signal.payload?.strength ?? 1,
           },
@@ -195,6 +202,78 @@ export function processSignal(signal, run) {
 
         run.signals.push(propagatedSignal);
         processSignal(propagatedSignal, run);
+      }
+
+      //====================================================
+      // CROSS-NEIGHBORHOOD HOP
+      // Only signals with a destination leave their Neighborhood.
+      // Signals without one stay local, so propagation scope stays
+      // the Simulation Engine's decision.
+
+      const arrived = signal.targetNeighborhoodId === neighborhood.id;
+
+      if (signal.isEntry && signal.targetNeighborhoodId && !arrived) {
+        const visited = signal.visitedNeighborhoods ?? [neighborhood.id];
+
+        // follow the planned route when there is one, otherwise fall back
+        // to spreading across every unvisited connection
+        const plannedNextId = signal.routeCalculated
+          ? signal.route[signal.currentHop + 1]
+          : null;
+
+        const links = (neighborhood.neighbors ?? []).filter((link) =>
+          plannedNextId ? link.neighborhoodId === plannedNextId : true,
+        );
+
+        for (const link of links) {
+          if (visited.includes(link.neighborhoodId)) continue;
+
+          const next = run.neighborhoods.find(
+            (n) => n.id === link.neighborhoodId,
+          );
+
+          // a signal enters a Neighborhood through one of its Agents
+          const entryAgentId = next?.agentIds[0];
+
+          if (!entryAgentId) continue;
+
+          const crossingSignal = {
+            id: randomUUID(),
+
+            experimentRunId: run.id,
+
+            type: signal.type,
+
+            parentSignalId: signal.parentSignalId || signal.id,
+
+            sourceId: target.id,
+
+            targetId: entryAgentId,
+
+            targetNeighborhoodId: signal.targetNeighborhoodId,
+
+            route: signal.route ?? [],
+
+            currentHop: signal.currentHop + 1,
+
+            routeCalculated: signal.routeCalculated ?? false,
+
+            visitedAgents: [...signal.visitedAgents, entryAgentId],
+
+            visitedNeighborhoods: [...visited, link.neighborhoodId],
+
+            isEntry: true,
+
+            payload: {
+              strength: signal.payload?.strength ?? 1,
+            },
+
+            timestamp: new Date().toISOString(),
+          };
+
+          run.signals.push(crossingSignal);
+          processSignal(crossingSignal, run);
+        }
       }
     }
   }
