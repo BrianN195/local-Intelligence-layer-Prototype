@@ -10,19 +10,32 @@ export default function runAutonomy(run) {
     if (!agent.neighborhoodId) {
       continue;
     }
+
     if (agent.status !== "online") {
       continue;
     }
+
     if (agent.stateId === 6) {
       continue;
     }
+
     const neighborhoodData = analyzeNeighborhood(run, agent.id);
 
-    const decision = agentAutonomy(agent, neighborhoodData);
+    if (!neighborhoodData) {
+      continue;
+    }
+
+    const decision = agentAutonomy(
+      agent,
+      neighborhoodData,
+      run
+    );
 
     if (!decision) {
       continue;
     }
+
+    const previousState = agent.stateId;
 
     run.observations.push({
       id: randomUUID(),
@@ -39,19 +52,31 @@ export default function runAutonomy(run) {
 
       neighborhoodId: neighborhoodData.neighborhoodId,
 
-      activeLocalNeighbors: neighborhoodData.activeLocalNeighbors ?? 0,
+      activeLocalNeighbors:
+        neighborhoodData.activeLocalNeighbors ?? 0,
 
-      localNeighborCount: neighborhoodData.localNeighborCount ?? 0,
+      localNeighborCount:
+        neighborhoodData.localNeighborCount ?? 0,
+
+      previousState,
 
       timestamp: new Date().toISOString(),
     });
 
-    const stateChanged = executeAutonomousAction(agent, decision, run);
+    const stateChanged = executeAutonomousAction(
+      agent,
+      decision,
+      run,
+    );
+
+    const newState = agent.stateId;
 
     decisions.push({
       agentId: agent.id,
       action: decision.action,
       reason: decision.reason,
+      previousState,
+      newState,
       stateChanged,
     });
   }

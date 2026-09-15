@@ -2,11 +2,14 @@ import { randomUUID } from "crypto";
 import { getStateId } from "../stateHelpers.js";
 import { processSignal } from "../engine.js";
 import { canPropagateToNeighborhood } from "./propagationScope.js";
+import { logState } from "./loggingFunc.js";
+
 const actions = {
   activate,
   propagate,
   block,
   sync,
+  inactivate
 };
 
 export default function executeRule(rule, signal, run) {
@@ -48,7 +51,19 @@ function activate(signal, run) {
     return;
   }
 
+  const previousState = agent.stateId;
+
   agent.stateId = activeStateId;
+
+  logState(
+    run,
+    agent.id,
+    previousState,
+    agent.stateId,
+    signal.id,
+    [],
+    "rule_activate",
+  );
 }
 
 // ====================================================
@@ -277,6 +292,49 @@ function sync(signal, run) {
       continue;
     }
 
+    const previousState = agent.stateId;
+
     agent.stateId = synchronizedStateId;
+
+    logState(
+      run,
+      agent.id,
+      previousState,
+      agent.stateId,
+      signal.id,
+      [],
+      "rule_sync",
+    );
   }
+}
+// ====================================================
+// INACTIVATE
+// ====================================================
+
+function inactivate(signal, run) {
+  const agent = run.agents.find(
+    (a) => a.id === signal.targetAgentId,
+  );
+
+  if (!agent) return;
+
+  const inactiveStateId = getStateId("inactive");
+
+  if (agent.stateId === inactiveStateId) {
+    return;
+  }
+
+  const previousState = agent.stateId;
+
+  agent.stateId = inactiveStateId;
+
+  logState(
+    run,
+    agent.id,
+    previousState,
+    agent.stateId,
+    signal.id,
+    [],
+    "rule_inactivate",
+  );
 }

@@ -33,6 +33,22 @@ function isValidBounds(b) {
 
 
 
+//Get Neighborhoods is only for visual on index.html at the moment
+/* GET NEIGHBORHOODS */
+router.get("/neighborhoods", (req, res) => {
+const run = store.experimentRuns.find(
+(r) => r.id === req.query.experimentRunId,
+);
+
+if (!run) {
+return res.status(404).json({
+error: `ExperimentRun ${run} not found`,
+});
+}
+
+res.json(run.neighborhoods);
+});
+
 /* ====================================================
    CREATE NEIGHBORHOOD
 ==================================================== */

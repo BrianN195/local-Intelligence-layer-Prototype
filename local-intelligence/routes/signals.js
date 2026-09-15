@@ -1,7 +1,8 @@
 import express from "express";
 import { store } from "../store.js";
-import { randomUUID } from "crypto";
-import { processSignal } from "../engine.js";
+import createSignal from "../createSignal.js";
+
+
 const router = express.Router();
 
 /* ====================================================
@@ -11,6 +12,12 @@ router.post("/signals", (req, res) => {
   const run = store.experimentRuns.find(
     (r) => r.id === req.body.experimentRunId,
   );
+
+  if (!run) {
+    return res.status(404).json({
+      error: "ExperimentRun not found",
+    });
+  }
 
   const sourceExists = run.agents.some(
     (agent) => agent.id === req.body.sourceAgentId,
@@ -28,36 +35,27 @@ router.post("/signals", (req, res) => {
     });
   }
 
-  if (!run) {
-    return res.status(404).json({
-      error: "ExperimentRun not found",
+  const signal = createSignal(run, {
+    type: req.body.type,
+
+    sourceAgentId:
+      req.body.sourceAgentId,
+
+    targetAgentId:
+      req.body.targetAgentId,
+
+    payload:
+      req.body.payload || {},
+
+    properties:
+      req.body.properties || {},
+  });
+
+  if (!signal) {
+    return res.status(400).json({
+      error: "Signal could not be created",
     });
   }
-
-  const signal = {
-    id: randomUUID(),
-    experimentRunId: run.id,
-    type: req.body.type,
-    sourceAgentId: req.body.sourceAgentId,
-    targetAgentId: req.body.targetAgentId,
-    payload: req.body.payload || {},
-    properties: {
-      // priorityMode: req.body.properties?.priorityMode ?? "highest",
-      ttl: req.body.properties?.ttl ?? 10,
-      hopCount: req.body.properties?.hopCount ?? 0,
-      propagationMode: req.body.properties?.propagationMode ?? "broadcast",
-      propagationScope: req.body.propagationScope ?? "neighborhood",
-      propagationDirection: req.body.properties?.propagationDirection ?? null,
-    },
-    status: req.body.status || "created",
-    visitedAgents: [req.body.sourceAgentId],
-    timestamp: new Date().toISOString(),
-    blocked: req.body.blocked ?? false,
-  };
-
-  run.signals.push(signal);
-  run.statistics.signalCount++;
-  processSignal(signal, run);
 
   res.status(201).json(signal);
 });

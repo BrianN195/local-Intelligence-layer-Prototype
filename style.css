@@ -1,0 +1,460 @@
+* {
+    box-sizing: border-box;
+}
+
+
+body {
+    margin: 0;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background: #f5f5f5;
+
+    color: #111;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+header {
+    padding: 30px;
+
+    background: white;
+
+    border-bottom: 1px solid #ddd;
+}
+
+header h1 {
+    margin: 0 0 5px 0;
+}
+
+header p {
+    margin: 0;
+
+    color: #666;
+}
+
+
+/* =========================
+   MAIN
+========================= */
+
+main {
+    max-width: 1100px;
+
+    margin: 0 auto;
+
+    padding: 30px;
+}
+
+
+/* =========================
+   STATISTICS
+========================= */
+
+.statistics {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, 1fr);
+
+    gap: 15px;
+
+    margin-bottom: 25px;
+}
+
+
+.stat {
+    background: white;
+
+    border: 1px solid #ddd;
+
+    padding: 20px;
+}
+
+
+.stat-label {
+    display: block;
+
+    color: #666;
+
+    font-size: 14px;
+
+    margin-bottom: 8px;
+}
+
+
+.stat-value {
+    font-size: 28px;
+
+    font-weight: bold;
+}
+
+
+/* =========================
+   PANEL
+========================= */
+
+.panel {
+    background: white;
+
+    border: 1px solid #ddd;
+
+    padding: 25px;
+
+    margin-bottom: 25px;
+}
+
+
+.panel h2 {
+    margin-top: 0;
+}
+
+
+/* =========================
+   SIGNAL FORM
+========================= */
+
+.form-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 15px;
+}
+
+
+.form-group {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 6px;
+}
+
+
+.form-group label {
+    font-size: 14px;
+
+    font-weight: bold;
+}
+
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    width: 100%;
+
+    padding: 10px;
+
+    border: 1px solid #bbb;
+
+    background: white;
+
+    font-family: inherit;
+
+    font-size: 14px;
+}
+
+
+.form-group textarea {
+    min-height: 80px;
+
+    resize: vertical;
+
+    font-family: monospace;
+}
+
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: 2px solid #111;
+
+    outline-offset: -2px;
+}
+
+
+.payload-group {
+    margin-top: 15px;
+}
+
+
+.signal-actions {
+    display: flex;
+
+    align-items: center;
+
+    gap: 15px;
+
+    margin-top: 15px;
+}
+
+
+.send-button,
+#refresh-button {
+    padding: 10px 18px;
+
+    border: 2px solid #111;
+
+    background: #111;
+
+    color: white;
+
+    cursor: pointer;
+
+    font-weight: bold;
+}
+
+
+.send-button:hover,
+#refresh-button:hover {
+    background: white;
+
+    color: #111;
+}
+
+
+#signal-status {
+    font-size: 14px;
+}
+
+
+#signal-status.success {
+    color: #16803c;
+}
+
+
+#signal-status.error {
+    color: #b00020;
+}
+
+
+/* =========================
+   VISUALIZATION HEADER
+========================= */
+
+.visualization-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    margin-bottom: 25px;
+}
+
+
+.visualization-header h2 {
+    margin-bottom: 5px;
+}
+
+
+.visualization-header p {
+    margin: 5px 0;
+
+    color: #666;
+
+    font-size: 14px;
+}
+
+
+.legend {
+    font-weight: bold;
+}
+
+
+/* =========================
+   9x9 GRID
+========================= */
+
+.grid-wrapper {
+    display: flex;
+
+    justify-content: center;
+
+    width: 100%;
+
+    overflow-x: auto;
+
+    padding: 10px;
+}
+
+
+.crowds-grid {
+    width: min(720px, 80vw);
+
+    aspect-ratio: 1 / 1;
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(9, 1fr);
+
+    grid-template-rows:
+        repeat(9, 1fr);
+
+    background: white;
+}
+
+
+/* =========================
+   GRID CELL
+========================= */
+
+.grid-cell {
+    position: relative;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-width: 0;
+
+    min-height: 0;
+
+    border-right: 1px solid #ccc;
+
+    border-bottom: 1px solid #ccc;
+}
+
+
+/* =========================
+   NEIGHBORHOOD BORDERS
+========================= */
+
+.neighborhood-top {
+    border-top: 4px solid #111;
+}
+
+
+.neighborhood-bottom {
+    border-bottom: 4px solid #111;
+}
+
+
+.neighborhood-left {
+    border-left: 4px solid #111;
+}
+
+
+.neighborhood-right {
+    border-right: 4px solid #111;
+}
+
+
+/* =========================
+   AGENT
+========================= */
+
+.agent {
+    width: 55%;
+
+    height: 55%;
+
+    min-width: 15px;
+
+    min-height: 15px;
+
+    border: 2px solid #111;
+
+    border-radius: 2px;
+}
+
+
+.agent.inactive {
+    background: rgb(131, 119, 119);
+}
+
+
+.agent.active {
+    background: #912222;
+}
+
+
+.agent.waiting {
+    background: rgb(159, 130, 130);
+}
+
+
+.agent.listening {
+    background: #9f5353;
+}
+
+/* =========================
+   ERROR
+========================= */
+
+.error {
+    color: #b00020;
+
+    font-weight: bold;
+}
+
+
+/* =========================
+   FOOTER
+========================= */
+
+footer {
+    padding: 20px 30px;
+
+    border-top: 1px solid #ddd;
+
+    background: white;
+
+    color: #666;
+
+    font-size: 14px;
+}
+
+
+/* =========================
+   RESPONSIVE
+========================= */
+
+@media (max-width: 800px) {
+
+    .statistics {
+        grid-template-columns:
+            repeat(2, 1fr);
+    }
+
+
+    .form-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .crowds-grid {
+        width: 90vw;
+    }
+}
+
+
+@media (max-width: 500px) {
+
+    main {
+        padding: 15px;
+    }
+
+
+    .statistics {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .panel {
+        padding: 15px;
+    }
+}

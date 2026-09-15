@@ -4,7 +4,8 @@ export const stateDefinitions = [
   { id: 3, name: "active" },
   { id: 4, name: "synchronized" },
   { id: 5, name: "triggered" },
-  {id: 6, name: "offline"}
+  {id: 6, name: "offline"},
+  {id: 7, name: "listening"}
 ];
 
 export const signalDefinitions = [

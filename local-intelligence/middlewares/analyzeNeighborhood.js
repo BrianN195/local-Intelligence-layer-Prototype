@@ -1,3 +1,5 @@
+import { getStateId } from "../stateHelpers.js";
+
 export default function analyzeNeighborhood(run, agentId) {
   const agent = run.agents.find((a) => a.id === agentId);
 
@@ -17,37 +19,34 @@ export default function analyzeNeighborhood(run, agentId) {
     .map((id) => run.agents.find((a) => a.id === id))
     .filter(Boolean);
 
+  const activeStateId = getStateId("active");
+  const inactiveStateId = getStateId("inactive");
+  const synchronizedStateId = getStateId("synchronized");
+
   const totalAgents = agents.length;
 
   //===================================
   // AGENTS FILTER OF STATE
   //===================================
 
-  const activeAgents = agents.filter(
-    (a) => a.stateId === 2,
-  ).length;
+  const activeAgents = agents.filter((a) => a.stateId === activeStateId).length;
 
   const inactiveAgents = agents.filter(
-    (a) => a.stateId === 1,
+    (a) => a.stateId === inactiveStateId,
   ).length;
 
   const synchronizedAgents = agents.filter(
-    (a) => a.stateId === 3,
+    (a) => a.stateId === synchronizedStateId,
   ).length;
 
   //===================================
   // AGENTS RATIO
   //===================================
 
-  const inactiveRatio =
-    totalAgents > 0
-      ? inactiveAgents / totalAgents
-      : 0;
+  const inactiveRatio = totalAgents > 0 ? inactiveAgents / totalAgents : 0;
 
   const synchronizedRatio =
-    totalAgents > 0
-      ? synchronizedAgents / totalAgents
-      : 0;
+    totalAgents > 0 ? synchronizedAgents / totalAgents : 0;
 
   //===================================
   // DOMINANT STATE
@@ -55,10 +54,7 @@ export default function analyzeNeighborhood(run, agentId) {
 
   let dominantState = "none";
 
-  if (
-    activeAgents >= inactiveAgents &&
-    activeAgents >= synchronizedAgents
-  ) {
+  if (activeAgents >= inactiveAgents && activeAgents >= synchronizedAgents) {
     dominantState = "active";
   } else if (inactiveAgents >= synchronizedAgents) {
     dominantState = "inactive";
@@ -83,34 +79,25 @@ export default function analyzeNeighborhood(run, agentId) {
       return false;
     }
 
-    const rowDistance = Math.abs(
-      otherAgent.position.row - agent.position.row,
-    );
+    const rowDistance = Math.abs(otherAgent.position.row - agent.position.row);
 
-    const colDistance = Math.abs(
-      otherAgent.position.col - agent.position.col,
-    );
+    const colDistance = Math.abs(otherAgent.position.col - agent.position.col);
 
     // Direct orthogonal neighbors only
-    return (
-      rowDistance + colDistance === 1
-    );
+    return rowDistance + colDistance === 1;
   });
 
-  const activeLocalNeighbors =
-    localNeighbors.filter(
-      (a) => a.stateId === 2,
-    ).length;
+  const activeLocalNeighbors = localNeighbors.filter(
+    (a) => a.stateId === activeStateId,
+  ).length;
 
-  const inactiveLocalNeighbors =
-    localNeighbors.filter(
-      (a) => a.stateId === 1,
-    ).length;
+  const inactiveLocalNeighbors = localNeighbors.filter(
+    (a) => a.stateId === inactiveStateId,
+  ).length;
 
-  const synchronizedLocalNeighbors =
-    localNeighbors.filter(
-      (a) => a.stateId === 3,
-    ).length;
+  const synchronizedLocalNeighbors = localNeighbors.filter(
+    (a) => a.stateId === synchronizedStateId,
+  ).length;
 
   return {
     neighborhoodId: neighborhood.id,
@@ -134,12 +121,9 @@ export default function analyzeNeighborhood(run, agentId) {
     // LOCAL AGENT NEIGHBORS
     //===================================
 
-    localNeighbors: localNeighbors.map(
-      (a) => a.id,
-    ),
+    localNeighbors: localNeighbors.map((a) => a.id),
 
-    localNeighborCount:
-      localNeighbors.length,
+    localNeighborCount: localNeighbors.length,
 
     activeLocalNeighbors,
 

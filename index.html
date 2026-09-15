@@ -1,0 +1,317 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>CROWDS - Local Intelligence Visualization</title>
+
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <header>
+      <h1>CROWDS</h1>
+      <p>Local Intelligence Visualization</p>
+    </header>
+
+    <main>
+      <!-- =========================
+         STATISTICS
+    ========================== -->
+
+      <section class="statistics">
+        <div class="stat">
+          <span class="stat-label">Agents</span>
+          <span id="agent-count" class="stat-value">0</span>
+        </div>
+
+        <div class="stat">
+          <span class="stat-label">Active</span>
+          <span id="active-count" class="stat-value">0</span>
+        </div>
+
+        <div class="stat">
+          <span class="stat-label">Inactive</span>
+          <span id="inactive-count" class="stat-value">0</span>
+        </div>
+
+        <div class="stat">
+          <span class="stat-label">Neighborhoods</span>
+          <span id="neighborhood-count" class="stat-value">0</span>
+        </div>
+      </section>
+
+      <!-- =========================
+         SIGNAL
+    ========================== -->
+
+      <section class="panel">
+        <h2>Send Signal</h2>
+
+        <form id="signal-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="signal-type"> Type </label>
+
+              <input
+                type="text"
+                id="signal-type"
+                placeholder="activation"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="source-agent"> Source Agent </label>
+
+              <select id="source-agent" required>
+                <option value="">Select agent</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="target-agent"> Target Agent </label>
+
+              <select id="target-agent">
+                <option value="">None</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="propagation-mode"> Propagation Mode </label>
+
+              <select id="propagation-mode">
+                <option value="broadcast">broadcast</option>
+
+                <option value="unicast">unicast</option>
+
+                <option value="target">target</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="propagation-scope"> Propagation Scope </label>
+
+              <select id="propagation-scope">
+                <option value="neighborhood">neighborhood</option>
+
+                <option value="global">global</option>
+
+                <option value="agent">agent</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="propagation-direction"> Direction </label>
+
+              <select id="propagation-direction">
+                <option value="">None</option>
+
+                <option value="north">north</option>
+
+                <option value="east">east</option>
+
+                <option value="south">south</option>
+
+                <option value="west">west</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="signal-ttl"> TTL </label>
+
+              <input type="number" id="signal-ttl" value="10" min="0" />
+            </div>
+          </div>
+
+          <div class="form-group payload-group">
+            <label for="signal-payload"> Payload </label>
+
+            <textarea
+              id="signal-payload"
+              placeholder='{"message": "test"}'
+            ></textarea>
+          </div>
+
+          <div class="signal-actions">
+            <button type="submit" class="send-button">Send Signal</button>
+
+            <span id="signal-status"></span>
+          </div>
+        </form>
+      </section>
+      <!-- ========================= CHANGE AGENT STATE ========================== -->
+      <section class="panel">
+        <h2>Change Agent State</h2>
+        <form id="state-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="state-agent"> Agent </label>
+              <select id="state-agent" required>
+                <option value="">Select agent</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="agent-state"> New State </label>
+              <select id="agent-state" required>
+                <option value="">Select state</option>
+                <option value="1">inactive</option>
+                <option value="2">waiting</option>
+                <option value="3">active</option>
+                <option value="4">synchronized</option>
+                <option value="5">triggered</option>
+                <option value="6">offline</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="state-reason"> Reason </label>
+              <input type="text" id="state-reason" placeholder="manual test" />
+            </div>
+          </div>
+          <div class="signal-actions">
+            <button type="submit" class="send-button">Change State</button>
+            <span id="state-status"></span>
+          </div>
+        </form>
+      </section>
+      <!-- ========================= AUTONOMY TICKS ========================== -->
+      <section class="panel">
+        <h2>Run Autonomy</h2>
+        <form id="autonomy-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="tick-count"> Number of Ticks </label>
+              <input
+                type="number"
+                id="tick-count"
+                value="1"
+                min="1"
+                max="100"
+                required
+              />
+            </div>
+          </div>
+          <div class="signal-actions">
+            <button type="submit" class="send-button">Run Ticks</button>
+            <span id="autonomy-status"></span>
+          </div>
+        </form>
+      </section>
+
+      <!-- ======Agent Action===== -->
+      <section class="panel">
+        <h2>Agent Action</h2>
+
+        <form id="action-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="action-agent"> Agent </label>
+
+              <select id="action-agent" required>
+                <option value="">Select agent</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="agent-action"> Action </label>
+
+              <select id="agent-action" required>
+                <option value="shake">shake</option>
+
+                <option value="raise">raise</option>
+
+                <option value="tap">tap</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="action-strength"> Signal Strength </label>
+
+              <input
+                type="number"
+                id="action-strength"
+                value="1"
+                min="0"
+                step="1"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="action-scope"> Propagation Scope </label>
+
+              <select id="action-scope">
+                <option value="neighborhood" selected>neighborhood</option>
+
+                <option value="global">global</option>
+
+                <option value="agent">agent</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="action-mode"> Propagation Mode </label>
+
+              <select id="action-mode">
+                <option value="unicast" selected>unicast</option>
+
+                <option value="broadcast">broadcast</option>
+
+                <option value="target">target</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="action-ttl"> TTL </label>
+
+              <input
+                type="number"
+                id="action-ttl"
+                value="10"
+                min="0"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="signal-actions">
+            <button type="submit" class="send-button">Trigger Action</button>
+
+            <span id="action-status"></span>
+          </div>
+        </form>
+      </section>
+      <!-- =========================
+         9x9 VISUALIZATION
+    ========================== -->
+
+      <section class="panel">
+        <div class="visualization-header">
+          <div>
+            <h2>Local Intelligence Grid</h2>
+
+            <p>9 × 9 Agents / 3 × 3 Neighborhoods</p>
+
+            <p class="legend">
+              White = inactive &nbsp;&nbsp; Waiting = waiting &nbsp;&nbsp; Black
+              = active &nbsp;&nbsp; Listening = listening
+            </p>
+          </div>
+
+          <button id="refresh-button">Refresh</button>
+        </div>
+
+        <div class="grid-wrapper">
+          <div id="visualization" class="crowds-grid"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span id="connection-status"> Connecting... </span>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>

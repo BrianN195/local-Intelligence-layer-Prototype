@@ -1,7 +1,7 @@
 import executeRule from "./executeRule.js";
 
 export default function evaluateRules(signal, run, neighborhoodData) {
-  let triggeredRules = [];
+  const triggeredRules = [];
 
   const ruleset = run.rulesets?.find((r) => r.active);
 
@@ -12,6 +12,9 @@ export default function evaluateRules(signal, run, neighborhoodData) {
     };
   }
 
+  // Wichtig:
+  // Rules werden in ihrer definierten Reihenfolge ausgeführt.
+  // Deshalb sollte activate vor propagate stehen.
   for (const rule of ruleset.rules) {
     if (!rule.enabled) continue;
 
@@ -32,9 +35,11 @@ export default function evaluateRules(signal, run, neighborhoodData) {
       continue;
     }
 
-    triggeredRules.push(rule.id);
+    const executed = executeRule(rule, signal, run);
 
-    executeRule(rule, signal, run);
+    if (executed) {
+      triggeredRules.push(rule.id);
+    }
 
     if (signal.blocked) {
       break;

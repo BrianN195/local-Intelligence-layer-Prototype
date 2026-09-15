@@ -66,7 +66,7 @@ export function processSignal(signal, run) {
 
   let swarmStateChanged = false;
 
-  if (previousState === target.stateId && !triggeredRules) {
+  if (previousState === target.stateId && triggeredRules.length === 0) {
     swarmBehavior(target, neighborhoodData);
 
     swarmStateChanged = previousState !== target.stateId;
@@ -100,9 +100,6 @@ export function processSignal(signal, run) {
 
     return;
   }
-
-  //====================================================
-  // STATE CHANGE LOG
 
   //====================================================
   // STATE CHANGE LOG

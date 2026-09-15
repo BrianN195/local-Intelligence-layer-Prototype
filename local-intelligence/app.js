@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 
 import experimentRoutes from "./routes/experimentRun.js";
 import agentRoutes from "./routes/agents.js";
@@ -9,6 +10,7 @@ import evaluateRuleRoutes from "./routes/rules.js";
 
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 
 app.use(experimentRoutes);
