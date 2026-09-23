@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CROWDS / Local Intelligence Workbench</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Local intelligence workbench</p>
+        <h1>CROWDS</h1>
+      </div>
+      <div class="run-meta">
+        <span id="connection-status">Connecting...</span>
+        <span id="data-updated">No refresh yet</span>
+      </div>
+    </header>
+
+    <main class="workbench">
+      <aside class="sidebar sidebar-left">
+        <section class="panel compact-panel">
+          <p class="eyebrow">01 / Layout</p>
+          <h2>Grid setup</h2>
+          <form id="layout-form">
+            <div class="field-row">
+              <label for="global-rows">Global rows</label>
+              <input id="global-rows" type="number" min="1" value="9" required />
+            </div>
+            <div class="field-row">
+              <label for="global-cols">Global columns</label>
+              <input id="global-cols" type="number" min="1" value="9" required />
+            </div>
+            <div class="field-row">
+              <label for="local-rows">Neighborhood rows</label>
+              <input id="local-rows" type="number" min="1" value="3" required />
+            </div>
+            <div class="field-row">
+              <label for="local-cols">Neighborhood columns</label>
+              <input id="local-cols" type="number" min="1" value="3" required />
+            </div>
+            <button class="action-button full-width" type="submit">Apply layout</button>
+            <button id="fill-grid-button" class="secondary-button full-width" type="button">Fill empty slots</button>
+            <span id="layout-status" class="status-line"></span>
+          </form>
+        </section>
+
+        <section class="panel compact-panel">
+          <p class="eyebrow">02 / Signal</p>
+          <h2>Send signal</h2>
+          <form id="signal-form">
+            <div class="field-row"><label for="signal-type">Type</label><input id="signal-type" placeholder="activate" required /></div>
+            <div class="field-row"><label for="source-agent">Source</label><select id="source-agent" required><option value="">Select agent</option></select></div>
+            <div class="field-row"><label for="target-agent">Target</label><select id="target-agent"><option value="">None</option></select></div>
+            <div class="field-row"><label for="propagation-mode">Mode</label><select id="propagation-mode"><option value="unicast">unicast</option><option value="broadcast">broadcast</option><option value="random">random</option><option value="priority">priority</option></select></div>
+            <div class="field-row"><label for="propagation-scope">Scope</label><select id="propagation-scope"><option value="neighborhood">neighborhood</option><option value="global">global</option><option value="adjacent">adjacent</option><option value="all">all</option></select></div>
+            <div class="field-row"><label for="signal-ttl">TTL</label><input id="signal-ttl" type="number" value="10" min="0" /></div>
+            <label for="signal-payload">Payload</label>
+            <textarea id="signal-payload" placeholder='{"strength": 1}'></textarea>
+            <button class="action-button full-width" type="submit">Send signal</button>
+            <span id="signal-status" class="status-line"></span>
+          </form>
+        </section>
+
+        <section class="panel compact-panel">
+          <p class="eyebrow">03 / Rule builder</p>
+          <h2>Add rule</h2>
+          <form id="rule-form">
+            <div class="field-row"><label for="rule-trigger-type">Trigger</label><select id="rule-trigger-type"><option value="signal_received">signal received</option><option value="state_changed">state changed</option></select></div>
+            <div class="field-row signal-rule-field"><label for="rule-signal-type">Signal type</label><input id="rule-signal-type" placeholder="activate" /></div>
+            <div class="field-row state-trigger-field"><label for="rule-from-state">From state</label><select id="rule-from-state"><option value="">Any</option><option value="inactive">inactive</option><option value="waiting">waiting</option><option value="active">active</option><option value="synchronized">synchronized</option><option value="listening">listening</option></select></div>
+            <div class="field-row state-trigger-field"><label for="rule-to-state">To state</label><select id="rule-to-state"><option value="">Any</option><option value="inactive">inactive</option><option value="waiting">waiting</option><option value="active">active</option><option value="synchronized">synchronized</option><option value="listening">listening</option></select></div>
+            <div class="field-row"><label for="rule-action">Action</label><select id="rule-action"><option value="activate">activate</option><option value="propagate">propagate</option><option value="block">block</option><option value="sync">sync</option><option value="inactivate">inactivate</option><option value="send_signal">send signal</option></select></div>
+            <div class="field-row"><label for="rule-scope">Scope</label><select id="rule-scope"><option value="global">global</option><option value="agent">agent</option><option value="neighborhood">neighborhood</option></select></div>
+            <div class="field-row"><label for="rule-agent">Agent</label><select id="rule-agent"><option value="">Agent scope only</option></select></div>
+            <div class="field-row"><label for="rule-neighborhood">Neighborhood</label><select id="rule-neighborhood"><option value="">Neighborhood scope only</option></select></div>
+            <div class="field-row signal-rule-field"><label for="rule-threshold">Threshold</label><input id="rule-threshold" type="number" min="0" step="0.1" placeholder="Optional" /></div>
+            <div id="appended-signal-fields" class="nested-fields">
+              <p class="mini-label">Appended signal</p>
+              <div class="field-row"><label for="appended-delay">Delay ms</label><input id="appended-delay" type="number" min="0" value="5000" /></div>
+              <div class="field-row"><label for="appended-target">Target agent</label><select id="appended-target"><option value="">Select target</option></select></div>
+              <div class="field-row"><label for="appended-type">Signal type</label><input id="appended-type" value="deactivate" /></div>
+              <div class="field-row"><label for="appended-scope">Propagation</label><select id="appended-scope"><option value="all">all</option><option value="neighborhood">neighborhood</option><option value="adjacent">adjacent</option></select></div>
+            </div>
+            <button class="action-button full-width" type="submit">Add rule</button>
+            <span id="rule-status" class="status-line"></span>
+          </form>
+        </section>
+      </aside>
+
+      <section class="center-stage">
+        <div class="stage-head">
+          <div><p class="eyebrow">Live simulation</p><h2>Global field</h2><p id="grid-description">Loading grid...</p></div>
+          <button id="refresh-button" class="icon-button" type="button" title="Refresh data">↻</button>
+        </div>
+        <div class="grid-frame"><div id="visualization" class="crowds-grid"></div></div>
+        <div class="legend"><span><i class="legend-dot inactive-dot"></i>inactive</span><span><i class="legend-dot active-dot"></i>active</span><span><i class="legend-dot waiting-dot"></i>waiting</span><span><i class="legend-dot listening-dot"></i>listening</span></div>
+        <div class="stats-strip">
+          <div><small>Agents</small><strong id="agent-count">0</strong></div>
+          <div><small>Active</small><strong id="active-count">0</strong></div>
+          <div><small>Inactive</small><strong id="inactive-count">0</strong></div>
+          <div><small>Neighborhoods</small><strong id="neighborhood-count">0</strong></div>
+          <div><small>Rules</small><strong id="rule-count">-</strong></div>
+        </div>
+      </section>
+
+      <aside class="sidebar sidebar-right">
+        <section class="panel compact-panel">
+          <p class="eyebrow">04 / State</p>
+          <h2>Agent state</h2>
+          <form id="state-form">
+            <div class="field-row"><label for="state-agent">Agent</label><select id="state-agent" required><option value="">Select agent</option></select></div>
+            <div class="field-row"><label for="agent-state">New state</label><select id="agent-state" required><option value="">Select state</option><option value="1">inactive</option><option value="2">waiting</option><option value="3">active</option><option value="4">synchronized</option><option value="5">triggered</option><option value="6">offline</option><option value="7">listening</option></select></div>
+            <div class="field-row"><label for="state-reason">Reason</label><input id="state-reason" placeholder="manual test" /></div>
+            <button class="action-button full-width" type="submit">Change state</button>
+            <span id="state-status" class="status-line"></span>
+          </form>
+        </section>
+
+        <section class="panel compact-panel">
+          <p class="eyebrow">05 / Autonomy</p>
+          <h2>Autonomy ticks</h2>
+          <form id="autonomy-form">
+            <div class="field-row"><label for="tick-count">Number of ticks</label><input id="tick-count" type="number" value="1" min="1" max="100" required /></div>
+            <button class="action-button full-width" type="submit">Run ticks</button>
+            <span id="autonomy-status" class="status-line"></span>
+          </form>
+        </section>
+
+        <section class="panel compact-panel">
+          <p class="eyebrow">06 / Interaction</p>
+          <h2>Agent action</h2>
+          <form id="action-form">
+            <div class="field-row"><label for="action-agent">Agent</label><select id="action-agent" required><option value="">Select agent</option></select></div>
+            <div class="field-row"><label for="agent-action">Action</label><select id="agent-action"><option value="shake">shake</option><option value="raise">raise</option><option value="tap">tap</option></select></div>
+            <div class="field-row"><label for="action-strength">Strength</label><input id="action-strength" type="number" value="1" min="0" step="0.1" required /></div>
+            <div class="field-row"><label for="action-scope">Scope</label><select id="action-scope"><option value="neighborhood">neighborhood</option><option value="global">global</option><option value="adjacent">adjacent</option></select></div>
+            <div class="field-row"><label for="action-mode">Mode</label><select id="action-mode"><option value="unicast">unicast</option><option value="broadcast">broadcast</option></select></div>
+            <div class="field-row"><label for="action-ttl">TTL</label><input id="action-ttl" type="number" value="10" min="0" required /></div>
+            <button class="action-button full-width" type="submit">Trigger action</button>
+            <span id="action-status" class="status-line"></span>
+          </form>
+        </section>
+
+        <section class="panel compact-panel diagnostics-panel">
+          <p class="eyebrow">07 / Diagnostics</p>
+          <h2>Helpers</h2>
+          <button id="clear-status-button" class="secondary-button full-width" type="button">Clear messages</button>
+          <p id="rule-detail" class="diagnostic-copy">Active RuleSet</p>
+          <p class="diagnostic-copy">Grid edits are applied to the current in-memory experiment run.</p>
+        </section>
+      </aside>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

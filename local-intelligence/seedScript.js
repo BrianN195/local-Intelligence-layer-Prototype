@@ -1,5 +1,6 @@
-const API = "http://localhost:3000";
+import { RULE_ACTIONS } from "./constants/actions.js";
 
+const API = "http://localhost:3000";
 
 async function post(endpoint, body) {
   const res = await fetch(`${API}${endpoint}`, {
@@ -13,146 +14,191 @@ async function post(endpoint, body) {
   if (!res.ok) {
     const error = await res.text();
 
-    throw new Error(
-      `${res.status}: ${error}`
-    );
+    throw new Error(`${res.status}: ${error}`);
   }
 
   return await res.json();
 }
 
+async function postRule(experimentRunId, rule) {
+  return post("/rules", {
+    experimentRunId,
+    rule,
+  });
+}
 
-async function seed() {
-
+export async function seed() {
   const experimentId = "experiment-9x9-test";
 
-
   // 1. Create ExperimentRun
-  const experiment = await post(
-    `/experiment-runs/${experimentId}`,
-    {}
-  );
+  const experiment = await post(`/experiment-runs/${experimentId}`, {});
 
-
-  console.log(
-    `Created ExperimentRun: ${experiment.id}`
-  );
-
+  console.log(`Created ExperimentRun: ${experiment.id}`);
 
   const neighborhoods = [];
   const agents = [];
 
-
   // 2. Create 9 Neighborhoods as a 3x3 global layout
   for (let n = 0; n < 9; n++) {
-
     const blockRow = Math.floor(n / 3);
     const blockCol = n % 3;
 
-    const neighborhood = await post(
-      "/neighborhoods",
-      {
-        experimentRunId: experimentId,
-        bounds: {
-          rowStart: blockRow * 3 + 1,
-          rowEnd: blockRow * 3 + 3,
-          colStart: blockCol * 3 + 1,
-          colEnd: blockCol * 3 + 3,
-        },
-      }
-    );
-
+    const neighborhood = await post("/neighborhoods", {
+      experimentRunId: experimentId,
+      bounds: {
+        rowStart: blockRow * 3 + 1,
+        rowEnd: blockRow * 3 + 3,
+        colStart: blockCol * 3 + 1,
+        colEnd: blockCol * 3 + 3,
+      },
+    });
 
     neighborhoods.push(neighborhood);
 
-
-    console.log(
-      `Created Neighborhood ${n}: ${neighborhood.id}`
-    );
-
+    console.log(`Created Neighborhood ${n}: ${neighborhood.id}`);
 
     // 3. Create 9 Agents per Neighborhood, on a local 3x3 grid
     for (let a = 0; a < 9; a++) {
-
-      const agent = await post(
-        "/agents",
-        {
-          experimentRunId: experimentId,
-          deviceId: `device-${n}-${a}`,
-        }
-      );
-
+      const agent = await post("/agents", {
+        experimentRunId: experimentId,
+        deviceId: `device-${n}-${a}`,
+      });
 
       agents.push(agent);
 
-
       // 4. Add Agent to Neighborhood at its local position
-      await post(
-        `/neighborhoods/${neighborhood.id}/agents`,
-        {
-          experimentRunId: experimentId,
-          agentId: agent.id,
-          row: Math.floor(a / 3) + 1,
-          col: (a % 3) + 1,
-        }
-      );
+      await post(`/neighborhoods/${neighborhood.id}/agents`, {
+        experimentRunId: experimentId,
+        agentId: agent.id,
+        row: Math.floor(a / 3) + 1,
+        col: (a % 3) + 1,
+      });
     }
   }
 
-
   // 5. Connect Neighborhoods using their global bounds
-  const connections = await post(
-    "/neighborhoods/connect",
-    {
-      experimentRunId: experimentId,
-    }
+  const connections = await post("/neighborhoods/connect", {
+    experimentRunId: experimentId,
+  });
+
+  const ruleSet = await post("/rulesets", {
+    name: "Default RuleSet",
+    experimentRunId: experimentId,
+  });
+
+  const seededRules = [];
+
+  seededRules.push(
+    await postRule(experimentId, {
+      signalType: "propagate",
+      action: RULE_ACTIONS.ACTIVATE,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "tap",
+      action: RULE_ACTIONS.ACTIVATE,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "shake",
+      action: RULE_ACTIONS.SYNC,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "propagation",
+      action: RULE_ACTIONS.PROPAGATE,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "tap",
+      action: RULE_ACTIONS.PROPAGATE,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      type: "autonomous",
+      signalType: "autonomous_activation",
+      action: RULE_ACTIONS.ACTIVATE,
+      threshold: 1,
+    }),
   );
 
+  // Follow-up scenario:
+  // Agent 1 becomes active, then sends a delayed deactivate signal to Agent 9.
+  const agentOne = agents[0];
+  const agentNine = agents[8];
+
+  seededRules.push(
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentOne.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "inactive",
+        toState: "active",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 5000,
+        targetAgentId: agentNine.id,
+        signalType: "deactivate",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-1-became-active",
+          autonomy: {
+            enabled: false,
+            durationMs: 10000,
+          },
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: "all",
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      signalType: "deactivate",
+      action: RULE_ACTIONS.INACTIVATE,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "deactivate",
+      action: RULE_ACTIONS.UPDATE_AUTONOMY,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "deactivate",
+      action: RULE_ACTIONS.PROPAGATE,
+      threshold: 1,
+    }),
+  );
 
   console.log(
-    `Connected ${connections.connected} Neighborhoods`
+    `Added ${seededRules.length} rules to ${ruleSet.name}, including the Agent 1 follow-up scenario.`,
   );
 
+  console.log(`Connected ${connections.connected} Neighborhoods`);
 
   console.log("\n========== SEED COMPLETE ==========");
 
-  console.log(
-    `ExperimentRun: ${experimentId}`
-  );
+  console.log(`ExperimentRun: ${experimentId}`);
 
-  console.log(
-    `Neighborhoods created: ${neighborhoods.length}`
-  );
+  console.log(`Neighborhoods created: ${neighborhoods.length}`);
 
-  console.log(
-    `Agents created: ${agents.length}`
-  );
+  console.log(`Agents created: ${agents.length}`);
 
-  console.log(
-    "\nFirst Agent:"
-  );
+  console.log("\nFirst Agent:");
 
-  console.log(
-    agents[0]
-  );
+  console.log(agents[0]);
 
-  console.log(
-    "\nFirst Neighborhood:"
-  );
+  console.log("\nFirst Neighborhood:");
 
-  console.log(
-    connections.neighborhoods[0]
-  );
+  console.log(connections.neighborhoods[0]);
 }
-
-
-seed()
-  .catch(error => {
-    console.error(
-      "\nSeed failed:"
-    );
-
-    console.error(
-      error.message
-    );
-  });
