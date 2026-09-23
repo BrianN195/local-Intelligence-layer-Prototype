@@ -2,12 +2,15 @@
 // PROPAGATION SCOPE
 // ====================================================
 
+import { PROPAGATION_SCOPES } from "../../constants/propagation.js";
+
 export function canPropagateToNeighborhood(
   signal,
   currentNeighborhood,
   targetNeighborhood,
 ) {
-  const scope = signal.properties?.propagationScope ?? "neighborhood";
+  const scope =
+    signal.properties?.propagationScope ?? PROPAGATION_SCOPES.NEIGHBORHOOD;
 
   if (!targetNeighborhood) {
     return false;
@@ -17,7 +20,7 @@ export function canPropagateToNeighborhood(
   // SAME NEIGHBORHOOD
   // ====================================================
 
-  if (scope === "neighborhood") {
+  if (scope === PROPAGATION_SCOPES.NEIGHBORHOOD) {
     return currentNeighborhood.id === targetNeighborhood.id;
   }
 
@@ -25,7 +28,7 @@ export function canPropagateToNeighborhood(
   // ADJACENT NEIGHBORHOODS
   // ====================================================
 
-  if (scope === "adjacent") {
+  if (scope === PROPAGATION_SCOPES.ADJACENT) {
     if (currentNeighborhood.id === targetNeighborhood.id) {
       return true;
     }
@@ -39,7 +42,7 @@ export function canPropagateToNeighborhood(
   // SPECIFIC NEIGHBORHOODS
   // ====================================================
 
-  if (scope === "specific") {
+  if (scope === PROPAGATION_SCOPES.SPECIFIC) {
     const targetNeighborhoodIds =
       signal.properties?.targetNeighborhoodIds ?? [];
     // vllt nochmal die namen überlegen wegen dopplungen
@@ -53,7 +56,7 @@ export function canPropagateToNeighborhood(
   // DIRECTION
   // ====================================================
   //unbedingt noch direction auf lowercase prüfen bzw setzen
-  if (scope === "direction") {
+  if (scope === PROPAGATION_SCOPES.DIRECTION) {
     const direction = signal.properties?.propagationDirection;
 
     if (!direction) {
@@ -75,7 +78,7 @@ export function canPropagateToNeighborhood(
   // ROUTE
   // ====================================================
 
-  if (scope === "route") {
+  if (scope === PROPAGATION_SCOPES.ROUTE) {
     const route = signal.properties?.propagationRoute ?? [];
 
     if (!Array.isArray(route) || route.length === 0) {
@@ -105,14 +108,14 @@ export function canPropagateToNeighborhood(
   // ALL NEIGHBORHOODS
   // ====================================================
 
-  if (scope === "all") {
+  if (scope === PROPAGATION_SCOPES.ALL) {
     return true;
   }
   // ====================================================
   // GLOBAL
   // ====================================================
 
-  if (scope === "global") {
+  if (scope === PROPAGATION_SCOPES.GLOBAL) {
     return true;
   }
 

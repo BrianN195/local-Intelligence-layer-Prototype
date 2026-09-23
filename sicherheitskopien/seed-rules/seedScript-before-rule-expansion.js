@@ -20,13 +20,6 @@ async function post(endpoint, body) {
   return await res.json();
 }
 
-async function postRule(experimentRunId, rule) {
-  return post("/rules", {
-    experimentRunId,
-    rule,
-  });
-}
-
 export async function seed() {
   const experimentId = "experiment-9x9-test";
 
@@ -86,84 +79,64 @@ export async function seed() {
     experimentRunId: experimentId,
   });
 
-  const seededRules = [];
-
-  seededRules.push(
-    await postRule(experimentId, {
+  const activRule = await post("/rules", {
+    experimentRunId: experimentId,
+    rule: {
       signalType: "propagate",
       action: RULE_ACTIONS.ACTIVATE,
       threshold: 1,
-    }),
-    await postRule(experimentId, {
+    },
+  });
+  const activByTapRule = await post("/rules", {
+    experimentRunId: experimentId,
+    rule: {
       signalType: "tap",
       action: RULE_ACTIONS.ACTIVATE,
       threshold: 1,
-    }),
-    await postRule(experimentId, {
+    },
+  });
+  const syncByShakeRule = await post("/rules", {
+    experimentRunId: experimentId,
+    rule: {
       signalType: "shake",
       action: RULE_ACTIONS.SYNC,
       threshold: 1,
-    }),
-    await postRule(experimentId, {
+    },
+  });
+  const propagationRule = await post("/rules", {
+    experimentRunId: experimentId,
+    rule: {
       signalType: "propagation",
       action: RULE_ACTIONS.PROPAGATE,
       threshold: 1,
-    }),
-    await postRule(experimentId, {
+    },
+  });
+  const propagationByTapRule = await post("/rules", {
+    experimentRunId: experimentId,
+    rule: {
       signalType: "tap",
       action: RULE_ACTIONS.PROPAGATE,
       threshold: 1,
-    }),
-    await postRule(experimentId, {
+    },
+  });
+  const autonomousRule = await post("/rules", {
+    experimentRunId: experimentId,
+    rule: {
       type: "autonomous",
       signalType: "autonomous_activation",
       action: RULE_ACTIONS.ACTIVATE,
       threshold: 1,
-    }),
-  );
-
-  // Follow-up scenario: Agent 1 becomes active, then sends deactivate to Agent 9.
-  const agentOne = agents[0];
-  const agentNine = agents[8];
-
-  seededRules.push(
-    await postRule(experimentId, {
-      scope: "agent",
-      agentId: agentOne.id,
-      trigger: {
-        type: "state_changed",
-        fromState: "inactive",
-        toState: "active",
-      },
-      action: RULE_ACTIONS.SEND_SIGNAL,
-      appendedSignal: {
-        delayMs: 5000,
-        targetAgentId: agentNine.id,
-        signalType: "deactivate",
-        signalPayload: {
-          strength: 1,
-          reason: "agent-1-became-active",
-        },
-        signalProperties: {
-          propagationMode: "broadcast",
-          propagationScope: "all",
-        },
-      },
-    }),
-    await postRule(experimentId, {
-      signalType: "deactivate",
-      action: RULE_ACTIONS.INACTIVATE,
-      threshold: 1,
-    }),
-    await postRule(experimentId, {
-      signalType: "deactivate",
-      action: RULE_ACTIONS.PROPAGATE,
-      threshold: 1,
-    }),
-  );
-
+    },
+  });
+  
   console.log(
-    `Added ${seededRules.length} rules to ${ruleSet.name}, including the Agent 1 follow-up scenario.`,
+    `Added ${activRule.action}, 
+    ${activByTapRule.action}, 
+    ${propagationRule.action}, 
+    ${propagationByTapRule.action}, 
+    ${syncByShakeRule.action}, 
+    ${autonomousRule.action} 
+    to ${ruleSet.name}`,
   );
 
   console.log(`Connected ${connections.connected} Neighborhoods`);

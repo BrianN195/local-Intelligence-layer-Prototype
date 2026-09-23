@@ -2,7 +2,10 @@ const API_URL = "http://localhost:3000";
 
 const EXPERIMENT_RUN_ID = "experiment-9x9-test";
 
-const GRID_SIZE = 9;
+let globalGridRows = 9;
+let globalGridCols = 9;
+let localGridRows = 3;
+let localGridCols = 3;
 
 // =========================
 // DOM ELEMENTS
@@ -50,6 +53,26 @@ const actionTtlInput = document.getElementById("action-ttl");
 
 const actionStatus = document.getElementById("action-status");
 
+const ruleForm = document.getElementById("rule-form");
+
+const ruleStatus = document.getElementById("rule-status");
+
+const ruleAgentSelect = document.getElementById("rule-agent");
+
+const ruleNeighborhoodSelect = document.getElementById("rule-neighborhood");
+
+const clearStatusButton = document.getElementById("clear-status-button");
+
+const layoutForm = document.getElementById("layout-form");
+
+const layoutStatus = document.getElementById("layout-status");
+
+const fillGridButton = document.getElementById("fill-grid-button");
+
+const ruleTriggerTypeSelect = document.getElementById("rule-trigger-type");
+
+const appendedSignalFields = document.getElementById("appended-signal-fields");
+
 let agents = [];
 let neighborhoods = [];
 // =========================
@@ -76,10 +99,20 @@ async function loadData() {
 
     agents = await fetchAgents();
     neighborhoods = await fetchNeighborhoods();
+    const layout = await fetchLayout();
+
+    updateGridInfo(neighborhoods, layout);
 
     updateStatistics(agents, neighborhoods);
 
     updateAgentSelects(agents);
+
+    updateNeighborhoodSelect(neighborhoods);
+
+    await updateRuleInfo();
+
+      document.getElementById("data-updated").textContent =
+        `Updated ${new Date().toLocaleTimeString()}`;
 
     renderGrid();
 
@@ -123,6 +156,34 @@ async function fetchNeighborhoods() {
   return response.json();
 }
 
+async function fetchLayout() {
+  const response = await fetch(
+    `${API_URL}/experiment-runs/${EXPERIMENT_RUN_ID}/layout`,
+  );
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch layout: ${response.status}`);
+  }
+
+  return response.json();
+}
+
+async function fetchRules() {
+  const response = await fetch(
+    `${API_URL}/rules/${EXPERIMENT_RUN_ID}`,
+  );
+
+  if (!response.ok) {
+    if (response.status === 404) {
+      return [];
+    }
+
+    throw new Error(`Failed to fetch rules: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 // =========================
 // STATISTICS
 // =========================
@@ -140,6 +201,52 @@ function updateStatistics(agents, neighborhoods) {
 
   document.getElementById("neighborhood-count").textContent =
     neighborhoods.length;
+}
+
+function updateGridInfo(neighborhoodList, layout = {}) {
+  const boundedNeighborhoods = neighborhoodList.filter(
+    (neighborhood) => neighborhood.bounds,
+  );
+
+  globalGridRows = Number(layout.globalRows) || boundedNeighborhoods.reduce(
+    (max, neighborhood) => Math.max(max, neighborhood.bounds.rowEnd),
+    0,
+  ) || 9;
+  globalGridCols = Number(layout.globalCols) || boundedNeighborhoods.reduce(
+    (max, neighborhood) => Math.max(max, neighborhood.bounds.colEnd),
+    0,
+  ) || 9;
+  localGridRows = Number(layout.localRows) || 3;
+  localGridCols = Number(layout.localCols) || 3;
+
+  document.getElementById("global-rows").value = globalGridRows;
+  document.getElementById("global-cols").value = globalGridCols;
+  document.getElementById("local-rows").value = localGridRows;
+  document.getElementById("local-cols").value = localGridCols;
+
+  const localSizes = boundedNeighborhoods.map((neighborhood) => {
+    const bounds = neighborhood.bounds;
+    return `${bounds.rowEnd - bounds.rowStart + 1} x ${bounds.colEnd - bounds.colStart + 1}`;
+  });
+
+  const uniqueLocalSizes = [...new Set(localSizes.length ? localSizes : [`${localGridRows} x ${localGridCols}`])];
+
+  document.getElementById("grid-description").textContent =
+    `${globalGridRows} x ${globalGridCols} global / ${localGridRows} x ${localGridCols} local neighborhoods`;
+}
+
+async function updateRuleInfo() {
+  try {
+    const rules = await fetchRules();
+    const activeRules = rules.filter((rule) => rule.enabled !== false);
+
+    document.getElementById("rule-count").textContent = activeRules.length;
+    document.getElementById("rule-detail").textContent =
+      `${rules.length} rule(s) loaded`;
+  } catch (error) {
+    document.getElementById("rule-count").textContent = "-";
+    document.getElementById("rule-detail").textContent = "RuleSet unavailable";
+  }
 }
 
 // =========================
@@ -166,6 +273,8 @@ function updateAgentSelects(agents) {
     `;
 
   actionAgentSelect.innerHTML = '<option value="">Select agent</option>';
+  ruleAgentSelect.innerHTML = '<option value="">Agent scope only</option>';
+  document.getElementById("appended-target").innerHTML = '<option value="">Select target</option>';
 
   for (const agent of agents) {
     const state = stateNames[agent.stateId] || "unknown";
@@ -205,6 +314,28 @@ function updateAgentSelects(agents) {
     actionOption.textContent = `${agent.deviceId} (${stateNames[agent.stateId] || "unknown"})`;
 
     actionAgentSelect.appendChild(actionOption);
+
+    const ruleAgentOption = document.createElement("option");
+    ruleAgentOption.value = agent.id;
+    ruleAgentOption.textContent = label;
+    ruleAgentSelect.appendChild(ruleAgentOption);
+
+    const appendedTargetOption = document.createElement("option");
+    appendedTargetOption.value = agent.id;
+    appendedTargetOption.textContent = label;
+    document.getElementById("appended-target").appendChild(appendedTargetOption);
+  }
+}
+
+function updateNeighborhoodSelect(neighborhoodList) {
+  ruleNeighborhoodSelect.innerHTML =
+    '<option value="">Only for neighborhood scope</option>';
+
+  for (const neighborhood of neighborhoodList) {
+    const option = document.createElement("option");
+    option.value = neighborhood.id;
+    option.textContent = neighborhood.name || neighborhood.id.slice(0, 8);
+    ruleNeighborhoodSelect.appendChild(option);
   }
 }
 
@@ -226,8 +357,11 @@ function renderGrid() {
   // CREATE 9x9 GRID
   // =========================
 
-  for (let row = 1; row <= GRID_SIZE; row++) {
-    for (let col = 1; col <= GRID_SIZE; col++) {
+  grid.style.gridTemplateColumns = `repeat(${globalGridCols}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${globalGridRows}, 1fr)`;
+
+  for (let row = 1; row <= globalGridRows; row++) {
+    for (let col = 1; col <= globalGridCols; col++) {
       // -------------------------
       // Create grid cell
       // -------------------------
@@ -402,9 +536,9 @@ async function sendSignal(event) {
         propagationMode,
 
         propagationDirection,
-      },
 
-      propagationScope,
+        propagationScope,
+      },
     };
 
     console.log("Sending signal:", signalData);
@@ -560,7 +694,7 @@ async function runAutonomyTicks(event) {
     }
 
     const response = await fetch(
-      `${API_URL}/experiment-runs/${EXPERIMENT_RUN_ID}/autonomy/ticks`,
+      `${API_URL}/experiment-runs/${EXPERIMENT_RUN_ID}/simulation/ticks`,
       {
         method: "POST",
 
@@ -701,11 +835,169 @@ async function triggerAgentAction(event) {
     actionStatus.className = "error";
   }
 }
+
+async function addSignalRule(event) {
+  event.preventDefault();
+
+  ruleStatus.textContent = "Adding...";
+  ruleStatus.className = "";
+
+  try {
+    const scope = document.getElementById("rule-scope").value;
+    const thresholdValue = document.getElementById("rule-threshold").value;
+    const triggerType = ruleTriggerTypeSelect.value;
+    const rule = {
+      action: document.getElementById("rule-action").value,
+      scope,
+    };
+
+    if (triggerType === "signal_received") {
+      rule.signalType = document.getElementById("rule-signal-type").value.trim();
+      rule.threshold = thresholdValue === "" ? null : Number(thresholdValue);
+    } else {
+      rule.trigger = {
+        type: "state_changed",
+        fromState: document.getElementById("rule-from-state").value || undefined,
+        toState: document.getElementById("rule-to-state").value || undefined,
+      };
+      rule.appendedSignal = {
+        delayMs: Number(document.getElementById("appended-delay").value),
+        targetAgentId: document.getElementById("appended-target").value,
+        signalType: document.getElementById("appended-type").value.trim(),
+        signalPayload: { strength: 1 },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: document.getElementById("appended-scope").value,
+        },
+      };
+    }
+
+    if (scope === "agent") {
+      rule.agentId = ruleAgentSelect.value;
+    }
+
+    if (scope === "neighborhood") {
+      rule.neighborhoodId = ruleNeighborhoodSelect.value;
+    }
+
+    if (triggerType === "signal_received" && !rule.signalType) {
+      throw new Error("Signal type is required.");
+    }
+
+    if (triggerType === "state_changed" && (!rule.appendedSignal.targetAgentId || !rule.appendedSignal.signalType)) {
+      throw new Error("Select a target and signal type for the appended signal.");
+    }
+
+    if (scope === "agent" && !rule.agentId) {
+      throw new Error("Select an agent for agent scope.");
+    }
+
+    if (scope === "neighborhood" && !rule.neighborhoodId) {
+      throw new Error("Select a neighborhood for neighborhood scope.");
+    }
+
+    const response = await fetch(`${API_URL}/rules`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        experimentRunId: EXPERIMENT_RUN_ID,
+        rule,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || `Failed to add rule: ${response.status}`);
+    }
+
+    ruleStatus.textContent = "Rule added";
+    ruleStatus.className = "success";
+    await updateRuleInfo();
+  } catch (error) {
+    ruleStatus.textContent = error.message;
+    ruleStatus.className = "error";
+  }
+}
+
+async function updateLayout(event) {
+  event.preventDefault();
+  layoutStatus.textContent = "Applying...";
+  layoutStatus.className = "status-line";
+
+  try {
+    const layout = {
+      globalRows: Number(document.getElementById("global-rows").value),
+      globalCols: Number(document.getElementById("global-cols").value),
+      localRows: Number(document.getElementById("local-rows").value),
+      localCols: Number(document.getElementById("local-cols").value),
+    };
+
+    const response = await fetch(`${API_URL}/experiment-runs/${EXPERIMENT_RUN_ID}/layout`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(layout),
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || `Layout failed: ${response.status}`);
+
+    layoutStatus.textContent = "Layout applied";
+    layoutStatus.className = "status-line success";
+    await loadData();
+  } catch (error) {
+    layoutStatus.textContent = error.message;
+    layoutStatus.className = "status-line error";
+  }
+}
+
+async function fillGrid() {
+  layoutStatus.textContent = "Filling slots...";
+  layoutStatus.className = "status-line";
+
+  try {
+    const response = await fetch(
+      `${API_URL}/experiment-runs/${EXPERIMENT_RUN_ID}/layout/fill`,
+      { method: "POST" },
+    );
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(result.error || `Fill failed: ${response.status}`);
+    }
+
+    layoutStatus.textContent =
+      `${result.agentCount} agents / ${result.slotCount} slots (${result.createdCount} created)`;
+    layoutStatus.className = "status-line success";
+    await loadData();
+  } catch (error) {
+    layoutStatus.textContent = error.message;
+    layoutStatus.className = "status-line error";
+  }
+}
+
+function updateRuleFormVisibility() {
+  const stateTrigger = ruleTriggerTypeSelect.value === "state_changed";
+  document.querySelectorAll(".state-trigger-field").forEach((field) => field.style.display = stateTrigger ? "grid" : "none");
+  document.querySelectorAll(".signal-rule-field").forEach((field) => field.style.display = stateTrigger ? "none" : "grid");
+  appendedSignalFields.classList.toggle("visible", stateTrigger);
+  document.getElementById("rule-action").value = stateTrigger ? "send_signal" : "activate";
+}
+
+function clearMessages() {
+  [signalStatus, stateStatus, autonomyStatus, actionStatus, ruleStatus].forEach(
+    (element) => {
+      element.textContent = "";
+      element.className = "";
+    },
+  );
+}
 // =========================
 // EVENTS
 // =========================
 
 refreshButton.addEventListener("click", loadData);
+
+clearStatusButton.addEventListener("click", clearMessages);
 
 signalForm.addEventListener("submit", sendSignal);
 
@@ -714,8 +1006,17 @@ stateForm.addEventListener("submit", changeAgentState);
 autonomyForm.addEventListener("submit", runAutonomyTicks);
 
 actionForm.addEventListener("submit", triggerAgentAction);
+
+ruleForm.addEventListener("submit", addSignalRule);
+
+layoutForm.addEventListener("submit", updateLayout);
+
+fillGridButton.addEventListener("click", fillGrid);
+
+ruleTriggerTypeSelect.addEventListener("change", updateRuleFormVisibility);
 // =========================
 // INITIAL LOAD
 // =========================
 
+updateRuleFormVisibility();
 loadData();

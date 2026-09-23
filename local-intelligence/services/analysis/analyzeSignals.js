@@ -1,22 +1,24 @@
+import { SIGNAL_STATUS } from "../../constants/statuses.js";
+
 export default function analyzeSignals(run) {
   if (!run) return null;
 
   const signals = run.signals ?? [];
 
   const created = signals.filter(
-    signal => signal.status === "created"
+    (signal) => signal.status === SIGNAL_STATUS.CREATED,
   ).length;
 
   const processing = signals.filter(
-    signal => signal.status === "processing"
+    (signal) => signal.status === SIGNAL_STATUS.PROCESSING,
   ).length;
 
   const propagated = signals.filter(
-    signal => signal.status === "propagated"
+    (signal) => signal.status === SIGNAL_STATUS.PROPAGATED,
   ).length;
 
   const completed = signals.filter(
-    signal => signal.status === "completed"
+    (signal) => signal.status === SIGNAL_STATUS.COMPLETED,
   ).length;
 
   const blocked = signals.filter(

@@ -1,7 +1,9 @@
-import runAutonomy from "./runAutonomy.js";
-import analyzeSignals from "./analyzeSignals.js";
-import { getStateId } from "../stateHelpers.js";
-import { analyzeCollectiveState } from "./analyzeCollectiveState.js";
+import runAutonomy from "../autonomy/runAutonomy.js";
+import analyzeSignals from "../analysis/analyzeSignals.js";
+import { getStateId } from "../../stateHelpers.js";
+import { analyzeCollectiveState } from "../analysis/analyzeCollectiveState.js";
+import { AUTONOMY_ACTIONS } from "../../constants/actions.js";
+import { STATE_NAMES } from "../../constants/statuses.js";
 
 export default function simulationTick(run) {
   if (!run) return null;
@@ -14,15 +16,15 @@ export default function simulationTick(run) {
   const collectiveState = analyzeCollectiveState(run);
 
   const activated = autonomyDecisions.filter(
-    (decision) => decision.action === "activate",
+    (decision) => decision.action === AUTONOMY_ACTIONS.ACTIVATE,
   ).length;
 
   const observed = autonomyDecisions.filter(
-    (decision) => decision.action === "observe",
+    (decision) => decision.action === AUTONOMY_ACTIONS.OBSERVE,
   ).length;
 
   const idle = autonomyDecisions.filter(
-    (decision) => decision.action === "idle",
+    (decision) => decision.action === AUTONOMY_ACTIONS.IDLE,
   ).length;
 
   const stateChanges = autonomyDecisions.filter(
@@ -43,9 +45,9 @@ export default function simulationTick(run) {
   // STATE STATISTICS
   // ====================================================
 
-  const activeStateId = getStateId("active");
-  const inactiveStateId = getStateId("inactive");
-  const synchronizedStateId = getStateId("synchronized");
+  const activeStateId = getStateId(STATE_NAMES.ACTIVE);
+  const inactiveStateId = getStateId(STATE_NAMES.INACTIVE);
+  const synchronizedStateId = getStateId(STATE_NAMES.SYNCHRONIZED);
 
   const stateStatistics = {
     active: run.agents.filter((agent) => agent.stateId === activeStateId)

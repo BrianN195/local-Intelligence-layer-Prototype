@@ -1,7 +1,9 @@
-import analyzeNeighborhood from "./analyzeNeighborhood.js";
+import analyzeNeighborhood from "../analysis/analyzeNeighborhood.js";
 import agentAutonomy from "./agentAutonomy.js";
 import executeAutonomousAction from "./executeAutonomousAction.js";
 import { randomUUID } from "crypto";
+import { STATE_NAMES } from "../../constants/statuses.js";
+import { getStateId } from "../../stateHelpers.js";
 
 export default function runAutonomy(run) {
   const decisions = [];
@@ -15,7 +17,7 @@ export default function runAutonomy(run) {
       continue;
     }
 
-    if (agent.stateId === 6) {
+    if (agent.stateId === getStateId(STATE_NAMES.OFFLINE)) {
       continue;
     }
 

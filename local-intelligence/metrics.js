@@ -1,4 +1,6 @@
 import { randomUUID } from "crypto";
+import { getStateId } from "./stateHelpers.js";
+import { STATE_NAMES } from "./constants/statuses.js";
 
 export function calculateMetrics(run) {
   const metrics = [];
@@ -11,7 +13,7 @@ export function calculateMetrics(run) {
   const totalAgents = run.agents.length;
 
   const activeAgents = run.agents.filter(
-    (agent) => agent.stateId === 3
+    (agent) => agent.stateId === getStateId(STATE_NAMES.ACTIVE)
   ).length;
 
   const activationDensity =
@@ -93,7 +95,7 @@ export function calculateMetrics(run) {
       if (neighborhoodAgents.length === 0) continue;
 
       const activeNeighborhoodAgents = neighborhoodAgents.filter(
-        (agent) => agent.stateId === 2,
+        (agent) => agent.stateId === getStateId(STATE_NAMES.WAITING),
       ).length;
 
       clusteringSum +=

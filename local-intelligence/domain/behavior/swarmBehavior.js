@@ -1,4 +1,4 @@
-import { getStateId } from "../stateHelpers.js";
+import { getStateId } from "../../stateHelpers.js";
 
 export default function swarmBehavior(
   targetAgent,

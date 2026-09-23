@@ -1,5 +1,12 @@
 import { randomUUID } from "crypto";
-import { processSignal } from "./engine.js";
+import { processSignal } from "./domain/signals/signalEngine.js";
+import { findAgentById } from "./repositories/agentRepository.js";
+import { addSignal } from "./repositories/signalRepository.js";
+import {
+  PROPAGATION_MODES,
+  PROPAGATION_SCOPES,
+} from "./constants/propagation.js";
+import { SIGNAL_STATUS } from "./constants/statuses.js";
 
 export default function createSignal(
   run,
@@ -15,13 +22,8 @@ export default function createSignal(
     return null;
   }
 
-  const sourceExists = run.agents.some(
-    (agent) => agent.id === sourceAgentId,
-  );
-
-  const targetExists = run.agents.some(
-    (agent) => agent.id === targetAgentId,
-  );
+  const sourceExists = Boolean(findAgentById(run, sourceAgentId));
+  const targetExists = Boolean(findAgentById(run, targetAgentId));
 
   if (!sourceExists || !targetExists) {
     return null;
@@ -46,16 +48,16 @@ export default function createSignal(
       hopCount: properties.hopCount ?? 0,
 
       propagationMode:
-        properties.propagationMode ?? "broadcast",
+        properties.propagationMode ?? PROPAGATION_MODES.BROADCAST,
 
       propagationScope:
-        properties.propagationScope ?? "neighborhood",
+        properties.propagationScope ?? PROPAGATION_SCOPES.NEIGHBORHOOD,
 
       propagationDirection:
         properties.propagationDirection ?? null,
     },
 
-    status: "created",
+    status: SIGNAL_STATUS.CREATED,
 
     visitedAgents: [sourceAgentId],
 
@@ -64,9 +66,7 @@ export default function createSignal(
     blocked: false,
   };
 
-  run.signals.push(signal);
-
-  run.statistics.signalCount++;
+  addSignal(run, signal);
 
   processSignal(signal, run);
 

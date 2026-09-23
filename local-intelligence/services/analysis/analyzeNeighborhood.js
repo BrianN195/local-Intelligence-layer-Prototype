@@ -1,4 +1,4 @@
-import { getStateId } from "../stateHelpers.js";
+import { getStateId } from "../../stateHelpers.js";
 
 export default function analyzeNeighborhood(run, agentId) {
   const agent = run.agents.find((a) => a.id === agentId);

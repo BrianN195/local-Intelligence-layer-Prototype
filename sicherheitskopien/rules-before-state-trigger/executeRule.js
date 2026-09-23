@@ -1,15 +1,21 @@
 import { randomUUID } from "crypto";
-import { getStateId } from "../stateHelpers.js";
-import { processSignal } from "../engine.js";
-import { canPropagateToNeighborhood } from "./propagationScope.js";
-import { logState } from "./loggingFunc.js";
+import { getStateId } from "../../stateHelpers.js";
+import { processSignal } from "../signals/signalEngine.js";
+import { canPropagateToNeighborhood } from "../signals/propagationScope.js";
+import { logState } from "../../services/logging/runLogger.js";
+import { RULE_ACTIONS } from "../../constants/actions.js";
+import {
+  PROPAGATION_MODES,
+  PROPAGATION_SCOPES,
+} from "../../constants/propagation.js";
+import { SIGNAL_STATUS } from "../../constants/statuses.js";
 
 const actions = {
-  activate,
-  propagate,
-  block,
-  sync,
-  inactivate
+  [RULE_ACTIONS.ACTIVATE]: activate,
+  [RULE_ACTIONS.PROPAGATE]: propagate,
+  [RULE_ACTIONS.BLOCK]: block,
+  [RULE_ACTIONS.SYNC]: sync,
+  [RULE_ACTIONS.INACTIVATE]: inactivate,
 };
 
 export default function executeRule(rule, signal, run) {
@@ -80,14 +86,14 @@ function block(signal) {
 
 function selectNeighbors(neighbors, mode, run) {
   switch (mode) {
-    case "random":
+    case PROPAGATION_MODES.RANDOM:
       return neighbors.sort(() => Math.random() - 0.5).slice(0, 1);
 
-    case "broadcast":
+    case PROPAGATION_MODES.BROADCAST:
     default:
       return neighbors;
 
-    case "priority":
+    case PROPAGATION_MODES.PRIORITY:
       return neighbors.sort((a, b) => {
         const agentA = run.agents.find((agent) => agent.id === a);
         const agentB = run.agents.find((agent) => agent.id === b);
@@ -120,7 +126,7 @@ function propagate(signal, run) {
 
     run.warningCount++;
 
-    signal.status = "completed";
+    signal.status = SIGNAL_STATUS.COMPLETED;
 
     return;
   }
@@ -149,10 +155,10 @@ function propagate(signal, run) {
   // PROPAGATION SETTINGS
 
   const propagationMode =
-    signal.properties?.propagationMode ?? "broadcast";
+    signal.properties?.propagationMode ?? PROPAGATION_MODES.BROADCAST;
 
   const propagationScope =
-    signal.properties?.propagationScope ?? "neighborhood";
+    signal.properties?.propagationScope ?? PROPAGATION_SCOPES.NEIGHBORHOOD;
 
   // ====================================================
   // FIND ALLOWED NEIGHBORHOODS
@@ -233,7 +239,7 @@ function propagate(signal, run) {
             (signal.properties.hopCount ?? 0) + 1,
         },
 
-        status: "created",
+        status: SIGNAL_STATUS.CREATED,
 
         visitedAgents: [
           ...signal.visitedAgents,
@@ -257,7 +263,7 @@ function propagate(signal, run) {
   // UPDATE SIGNAL STATUS
 
   if (propagated) {
-    signal.status = "propagated";
+    signal.status = SIGNAL_STATUS.PROPAGATED;
   }
 }
   // 

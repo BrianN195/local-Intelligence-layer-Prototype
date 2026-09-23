@@ -121,8 +121,7 @@ export const store = {
       states: [],
       stateHistory: [],
       propagationEvents: [],
-      observationMetrics: [],
-      scheduledActions: [],
+      observationMetrics: []
     }
   ]
 };

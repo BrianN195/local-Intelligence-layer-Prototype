@@ -1,22 +1,20 @@
-import evaluateRules from "./middlewares/evaluateRules.js";
-import analyzeNeighborhood from "./middlewares/analyzeNeighborhood.js";
+import evaluateSignalRules from "../rules/evaluateRules.js";
+import analyzeNeighborhood from "../../services/analysis/analyzeNeighborhood.js";
 import {
   logPropagation,
   logState,
   logTechnicalWarning,
   logFailure,
-} from "./middlewares/loggingFunc.js";
-import swarmBehavior from "./middlewares/swarmBehavior.js";
-import analyzeCollectiveIntelligence from "./middlewares/collectiveIntelligence.js";
-import detectEmergentBehavior from "./middlewares/detectEmergentBehavior.js";
-import analyzeRuleAdaptation from "./middlewares/selfOrganizingRules.js";
+} from "../../services/logging/runLogger.js";
+import swarmBehavior from "../behavior/swarmBehavior.js";
+import { SIGNAL_STATUS } from "../../constants/statuses.js";
 //====================================================
 // MAIN ENGINE
 
 export function processSignal(signal, run) {
   const startTime = Date.now();
 
-  signal.status = "processing";
+  signal.status = SIGNAL_STATUS.PROCESSING;
 
   run.statistics.processedSignals = (run.statistics.processedSignals ?? 0) + 1;
 
@@ -58,7 +56,7 @@ export function processSignal(signal, run) {
   //====================================================
   // RULESET EVALUATION
 
-  const { triggeredRules, blocked } = evaluateRules(
+  const { triggeredRules, blocked } = evaluateSignalRules(
   signal,
   run,
   neighborhoodData,
@@ -85,7 +83,7 @@ export function processSignal(signal, run) {
   }
 
   if (blocked) {
-    signal.status = "blocked";
+    signal.status = SIGNAL_STATUS.BLOCKED;
     logPropagation(run, signal, signal.sourceAgentId, signal.targetAgentId, {
       status: "blocked",
       ruleTriggered: triggeredRules,
@@ -133,5 +131,5 @@ export function processSignal(signal, run) {
   run.statistics.successfulSignals =
     (run.statistics.successfulSignals ?? 0) + 1;
 
-  signal.status = "completed";
+  signal.status = SIGNAL_STATUS.COMPLETED;
 }

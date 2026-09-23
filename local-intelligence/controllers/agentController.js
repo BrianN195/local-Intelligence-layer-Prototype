@@ -1,12 +1,18 @@
-import { store } from "../store.js";
 import { randomUUID } from "crypto";
 import createSignal from "../createSignal.js";
+import { findExperimentRunById } from "../repositories/experimentRunRepository.js";
+import { STATE_NAMES } from "../constants/statuses.js";
+import { getStateId } from "../stateHelpers.js";
+import {
+  addAgent,
+  findAgentById,
+  findAgentByPosition,
+  getAgents as getStoredAgents,
+} from "../repositories/agentRepository.js";
 
 
 export function createAgent(req, res) {
-  const run = store.experimentRuns.find(
-    (r) => r.id === req.body.experimentRunId,
-  );
+  const run = findExperimentRunById(req.body.experimentRunId);
 
   if (!run) {
     return res.status(404).json({
@@ -19,7 +25,7 @@ export function createAgent(req, res) {
 
     deviceId: req.body.deviceId,
 
-    stateId: 1,
+    stateId: getStateId(STATE_NAMES.INACTIVE),
 
     neighborhoodId: null,
 
@@ -34,7 +40,7 @@ export function createAgent(req, res) {
     metadata: {},
   };
 
-  run.agents.push(agent);
+  addAgent(run, agent);
 
   run.stateHistory.push({
     id: randomUUID(),
@@ -53,9 +59,7 @@ export function createAgent(req, res) {
   res.status(201).json(agent);
 }
 export function updateAgentState(req, res) {
-  const run = store.experimentRuns.find(
-    (r) => r.id === req.body.experimentRunId,
-  );
+  const run = findExperimentRunById(req.body.experimentRunId);
 
   if (!run) {
     return res.status(404).json({
@@ -63,7 +67,7 @@ export function updateAgentState(req, res) {
     });
   }
 
-  const agent = run.agents.find((a) => a.id === req.params.id);
+  const agent = findAgentById(run, req.params.id);
 
   if (!agent) {
     return res.status(404).json({
@@ -90,9 +94,7 @@ export function updateAgentState(req, res) {
   res.json(agent);
 }
 export function getAgents(req, res) {
-  const run = store.experimentRuns.find(
-    (r) => r.id === req.query.experimentRunId,
-  );
+  const run = findExperimentRunById(req.query.experimentRunId);
 
   if (!run) {
     return res.status(404).json({
@@ -100,7 +102,7 @@ export function getAgents(req, res) {
     });
   }
 
-  res.json(run.agents);
+  res.json(getStoredAgents(run));
 }
 
 function findActionTarget(run, agent, action) {
@@ -131,18 +133,16 @@ function findActionTarget(run, agent, action) {
 
   const targetCol = agent.position.col + direction.col;
 
-  return run.agents.find(
-    (candidate) =>
-      candidate.neighborhoodId === agent.neighborhoodId &&
-      candidate.position?.row === targetRow &&
-      candidate.position?.col === targetCol,
+  return findAgentByPosition(
+    run,
+    agent.neighborhoodId,
+    targetRow,
+    targetCol,
   );
 }
 
 export function agentAction(req, res) {
-  const run = store.experimentRuns.find(
-    (r) => r.id === req.body.experimentRunId,
-  );
+  const run = findExperimentRunById(req.body.experimentRunId);
 
   if (!run) {
     return res.status(404).json({
@@ -150,7 +150,7 @@ export function agentAction(req, res) {
     });
   }
 
-  const agent = run.agents.find((a) => a.id === req.params.id);
+  const agent = findAgentById(run, req.params.id);
 
   if (!agent) {
     return res.status(404).json({

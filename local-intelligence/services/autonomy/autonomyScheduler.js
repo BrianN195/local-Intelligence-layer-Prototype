@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import simulationTick from "./simulationTick.js";
+import simulationTick from "../simulation/simulationTick.js";
 
 export default function runAutonomyTicks(run, tickCount = 1) {
 

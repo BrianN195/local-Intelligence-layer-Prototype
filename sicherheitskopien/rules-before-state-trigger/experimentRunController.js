@@ -53,7 +53,6 @@ export function createExperimentrun(req, res){
         failureStates: [],
         experimentParticipants: [],
         autonomyTicks: [],
-        scheduledActions: [],
     
         statistics: {
           observationCount: 0,
@@ -156,7 +155,6 @@ export function getExperimentRunLogs(req, res){
         experimentParticipants: run.experimentParticipants,
     
         autonomyTicks: run.autonomyTicks,
-        scheduledActions: run.scheduledActions ?? [],
       });
 }
 export function analyzeCollectiveBehavior(req, res){
@@ -413,6 +411,5 @@ export function getAutonomyTicks(req, res) {
     experimentRunId: run.id,
     count: run.autonomyTicks.length,
     autonomyTicks: run.autonomyTicks,
-    scheduledActions: run.scheduledActions ?? [],
   });
 }
