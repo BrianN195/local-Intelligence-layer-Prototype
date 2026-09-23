@@ -10,13 +10,15 @@ import {
 } from "../../constants/propagation.js";
 import { SIGNAL_STATUS } from "../../constants/statuses.js";
 import triggerStateChangeRules from "../../services/scheduling/triggerStateChangeRules.js";
-
+import { findAgentById } from "../../repositories/agentRepository.js";
 const actions = {
   [RULE_ACTIONS.ACTIVATE]: activate,
   [RULE_ACTIONS.PROPAGATE]: propagate,
   [RULE_ACTIONS.BLOCK]: block,
   [RULE_ACTIONS.SYNC]: sync,
   [RULE_ACTIONS.INACTIVATE]: inactivate,
+  [RULE_ACTIONS.UPDATE_AUTONOMY]: updateAutonomy,
+  
 };
 
 export default function executeRule(rule, signal, run) {
@@ -46,9 +48,7 @@ export default function executeRule(rule, signal, run) {
 // ====================================================
 
 function activate(signal, run) {
-  const agent = run.agents.find(
-    (a) => a.id === signal.targetAgentId,
-  );
+  const agent = findAgentById(run, signal.targetAgentId)
 
   if (!agent) return;
 
@@ -275,9 +275,7 @@ function propagate(signal, run) {
 // ====================================================
 
 function sync(signal, run) {
-  const targetAgent = run.agents.find(
-    (a) => a.id === signal.targetAgentId,
-  );
+  const targetAgent = findAgentById(run, signal.targetAgentId)
 
   if (!targetAgent) return;
 
@@ -323,9 +321,7 @@ function sync(signal, run) {
 // ====================================================
 
 function inactivate(signal, run) {
-  const agent = run.agents.find(
-    (a) => a.id === signal.targetAgentId,
-  );
+  const agent = findAgentById(run, signal.targetAgentId)
 
   if (!agent) return;
 
@@ -352,3 +348,39 @@ function inactivate(signal, run) {
   );
 }
 
+function updateAutonomy(signal, run) {
+  const agent = findAgentById(run, signal.targetAgentId)
+
+  if (!agent) return;
+
+  if (!agent.autonomy) {
+    agent.autonomy = {
+      enabled: true,
+      suspendedUntil: null,
+    };
+  }
+
+  const autonomy = signal.payload?.autonomy;
+
+  if (!autonomy) return;
+
+  if (autonomy.enabled === true) {
+    agent.autonomy.enabled = true;
+    agent.autonomy.suspendedUntil = null;
+    return;
+  }
+
+  if (autonomy.enabled === false) {
+    agent.autonomy.enabled = false;
+
+    const durationMs = Number(autonomy.durationMs ?? 0);
+
+    if (durationMs > 0) {
+      agent.autonomy.suspendedUntil = new Date(
+        Date.now() + durationMs,
+      ).toISOString();
+    } else {
+      agent.autonomy.suspendedUntil = null;
+    }
+  }
+}

@@ -11,6 +11,7 @@ import {
   getOnlyCollectiveBehavior,
   getPropagationEvents,
   getSignals,
+  pauseRun,
   postCollectiveIntelligence,
   runAutonomyOnce,
   runAutonomyTickBatch,
@@ -28,6 +29,7 @@ router.get("/experiment-runs/:id/logs", getExperimentRunLogs);
 router.post("/experiment-runs/:id/analyze", analyzeCollectiveBehavior);
 router.get("/experiment-runs/:id/results", getOnlyCollectiveBehavior);
 router.patch("/experiment-runs/:id/start", startRun);
+router.post("/experiment-runs/:id/pause", pauseRun);
 router.patch("/experiment-runs/:id/finish", endRun);
 router.post(
   "/experiment-runs/:id/collective-intelligence",

@@ -30,7 +30,7 @@ export default function evaluateSignalRules(
   for (const rule of ruleset.rules) {
     if (!rule.enabled) continue;
 
-    if (rule.trigger?.type === "state_changed") continue;
+    if (rule.trigger?.type === "state_changed") continue;// hier problem ?
 
     if (rule.signalType !== signal.type) continue;
 

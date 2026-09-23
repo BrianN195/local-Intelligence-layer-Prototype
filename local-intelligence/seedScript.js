@@ -94,26 +94,31 @@ export async function seed() {
       action: RULE_ACTIONS.ACTIVATE,
       threshold: 1,
     }),
+
     await postRule(experimentId, {
       signalType: "tap",
       action: RULE_ACTIONS.ACTIVATE,
       threshold: 1,
     }),
+
     await postRule(experimentId, {
       signalType: "shake",
       action: RULE_ACTIONS.SYNC,
       threshold: 1,
     }),
+
     await postRule(experimentId, {
       signalType: "propagation",
       action: RULE_ACTIONS.PROPAGATE,
       threshold: 1,
     }),
+
     await postRule(experimentId, {
       signalType: "tap",
       action: RULE_ACTIONS.PROPAGATE,
       threshold: 1,
     }),
+
     await postRule(experimentId, {
       type: "autonomous",
       signalType: "autonomous_activation",
@@ -122,7 +127,8 @@ export async function seed() {
     }),
   );
 
-  // Follow-up scenario: Agent 1 becomes active, then sends deactivate to Agent 9.
+  // Follow-up scenario:
+  // Agent 1 becomes active, then sends a delayed deactivate signal to Agent 9.
   const agentOne = agents[0];
   const agentNine = agents[8];
 
@@ -143,6 +149,10 @@ export async function seed() {
         signalPayload: {
           strength: 1,
           reason: "agent-1-became-active",
+          autonomy: {
+            enabled: false,
+            durationMs: 10000,
+          },
         },
         signalProperties: {
           propagationMode: "broadcast",
@@ -150,11 +160,19 @@ export async function seed() {
         },
       },
     }),
+
     await postRule(experimentId, {
       signalType: "deactivate",
       action: RULE_ACTIONS.INACTIVATE,
       threshold: 1,
     }),
+
+    await postRule(experimentId, {
+      signalType: "deactivate",
+      action: RULE_ACTIONS.UPDATE_AUTONOMY,
+      threshold: 1,
+    }),
+
     await postRule(experimentId, {
       signalType: "deactivate",
       action: RULE_ACTIONS.PROPAGATE,
@@ -184,5 +202,3 @@ export async function seed() {
 
   console.log(connections.neighborhoods[0]);
 }
-
-

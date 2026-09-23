@@ -21,17 +21,25 @@ export default function runAutonomy(run) {
       continue;
     }
 
+    if (agent.autonomy?.enabled === false) {
+      if (
+        agent.autonomy.suspendedUntil &&
+        Date.parse(agent.autonomy.suspendedUntil) <= Date.now()
+      ) {
+        agent.autonomy.enabled = true;
+        agent.autonomy.suspendedUntil = null;
+      } else {
+        continue;
+      }
+    }
+
     const neighborhoodData = analyzeNeighborhood(run, agent.id);
 
     if (!neighborhoodData) {
       continue;
     }
 
-    const decision = agentAutonomy(
-      agent,
-      neighborhoodData,
-      run
-    );
+    const decision = agentAutonomy(agent, neighborhoodData, run);
 
     if (!decision) {
       continue;
@@ -54,22 +62,16 @@ export default function runAutonomy(run) {
 
       neighborhoodId: neighborhoodData.neighborhoodId,
 
-      activeLocalNeighbors:
-        neighborhoodData.activeLocalNeighbors ?? 0,
+      activeLocalNeighbors: neighborhoodData.activeLocalNeighbors ?? 0,
 
-      localNeighborCount:
-        neighborhoodData.localNeighborCount ?? 0,
+      localNeighborCount: neighborhoodData.localNeighborCount ?? 0,
 
       previousState,
 
       timestamp: new Date().toISOString(),
     });
 
-    const stateChanged = executeAutonomousAction(
-      agent,
-      decision,
-      run,
-    );
+    const stateChanged = executeAutonomousAction(agent, decision, run);
 
     const newState = agent.stateId;
 

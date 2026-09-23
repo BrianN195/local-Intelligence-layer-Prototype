@@ -10,7 +10,6 @@ import {
   getAgents as getStoredAgents,
 } from "../repositories/agentRepository.js";
 
-
 export function createAgent(req, res) {
   const run = findExperimentRunById(req.body.experimentRunId);
 
@@ -26,6 +25,11 @@ export function createAgent(req, res) {
     deviceId: req.body.deviceId,
 
     stateId: getStateId(STATE_NAMES.INACTIVE),
+
+    autonomy: {
+      enabled: true,
+      suspendedUntil: null,
+    },
 
     neighborhoodId: null,
 
@@ -133,12 +137,7 @@ function findActionTarget(run, agent, action) {
 
   const targetCol = agent.position.col + direction.col;
 
-  return findAgentByPosition(
-    run,
-    agent.neighborhoodId,
-    targetRow,
-    targetCol,
-  );
+  return findAgentByPosition(run, agent.neighborhoodId, targetRow, targetCol);
 }
 
 export function agentAction(req, res) {
