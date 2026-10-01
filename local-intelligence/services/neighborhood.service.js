@@ -4,6 +4,7 @@ import {
   Neighborhood,
   FailureState,
   ProtocolEvent,
+  TechnicalWarning,
 } from "../models/index.js";
 
 // distance

@@ -2,22 +2,26 @@ import mongoose from "mongoose";
 
 const AgentSchema = new mongoose.Schema(
   {
+    experimentRunId: {
+      type: String,
+      ref: "ExperimentRun",
+      required: true,
+      index: true,
+    },
     // Device identity
     deviceId: {
       type: String,
       required: true,
-      unique: true,
       index: true,
     },
     // Current state reference
     stateId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "AgentState",
-      default: null,
+      type: Number,
+      default: 1,
     },
     // Current neighborhood
     neighborhoodId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Neighborhood",
       default: null,
       index: true,
@@ -48,16 +52,40 @@ const AgentSchema = new mongoose.Schema(
         type: Number,
         required: true,
       },
+      // Kept for compatibility with the replacement-agent service.
+      x: {
+        type: Number,
+        default: null,
+      },
+      y: {
+        type: Number,
+        default: null,
+      },
     },
     direction: {
       type: Number,
       default: 0,
     },
+    priority: {
+      type: Number,
+      min: 0,
+      default: 1,
+    },
+    autonomy: {
+      enabled: {
+        type: Boolean,
+        default: true,
+      },
+      suspendedUntil: {
+        type: Date,
+        default: null,
+      },
+    },
     // Connection status
     status: {
       type: String,
       enum: ["offline", "online", "busy"],
-      default: "offline",
+      default: "online",
       index: true,
     },
     // Last communication
@@ -75,8 +103,10 @@ const AgentSchema = new mongoose.Schema(
   },
 );
 AgentSchema.index({
+  experimentRunId: 1,
   neighborhoodId: 1,
   status: 1,
 });
+AgentSchema.index({ experimentRunId: 1, deviceId: 1 }, { unique: true });
 
 export const Agent = mongoose.model("Agent", AgentSchema);

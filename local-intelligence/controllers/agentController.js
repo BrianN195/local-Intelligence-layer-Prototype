@@ -11,6 +11,15 @@ import {
 } from "../repositories/agentRepository.js";
 
 export function createAgent(req, res) {
+  const row = Number(req.body.position?.row ?? req.body.row);
+  const col = Number(req.body.position?.col ?? req.body.col);
+
+  if (!Number.isInteger(row) || !Number.isInteger(col) || row < 1 || col < 1) {
+    return res.status(400).json({
+      error: "Agent position row and col must be positive integers.",
+    });
+  }
+
   const run = findExperimentRunById(req.body.experimentRunId);
 
   if (!run) {
@@ -33,7 +42,7 @@ export function createAgent(req, res) {
 
     neighborhoodId: null,
 
-    position: { row: null, col: null },
+    position: { row, col },
 
     priority: req.body.priority ?? 1,
 
@@ -48,6 +57,8 @@ export function createAgent(req, res) {
 
   run.stateHistory.push({
     id: randomUUID(),
+
+    experimentRunId: run.id,
 
     agentId: agent.id,
 
@@ -83,6 +94,8 @@ export function updateAgentState(req, res) {
   agent.lastSeen = new Date().toISOString();
   run.stateHistory.push({
     id: randomUUID(),
+
+    experimentRunId: run.id,
 
     agentId: agent.id,
 

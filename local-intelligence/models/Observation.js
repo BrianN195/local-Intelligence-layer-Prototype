@@ -3,14 +3,14 @@ import mongoose from "mongoose";
 const ObservationSchema = new mongoose.Schema(
   {
     experimentRunId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ExperimentRun",
       required: true,
       index: true,
     },
 
     agentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
       default: null,
       index: true,
@@ -24,6 +24,11 @@ const ObservationSchema = new mongoose.Schema(
     data: {
       type: mongoose.Schema.Types.Mixed,
       default: {},
+    },
+
+    source: {
+      type: String,
+      default: null,
     },
 
     description: {

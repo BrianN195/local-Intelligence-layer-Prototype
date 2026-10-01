@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { RuleSchema } from "./Rule.js";
 
 const RuleSetSchema = new mongoose.Schema(
   {
@@ -7,20 +8,15 @@ const RuleSetSchema = new mongoose.Schema(
       required: true,
     },
     experimentRunId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ExperimentRun",
       required: true,
       index: true,
     },
-    ruleIds: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Rule",
-      },
-    ],
+    rules: { type: [RuleSchema], default: [] },
     active: {
       type: Boolean,
-      default: false,
+      default: true,
       index: true,
     },
     activatedAt: {
@@ -49,5 +45,9 @@ RuleSetSchema.index({
   experimentRunId: 1,
   active: 1,
 });
+RuleSetSchema.index(
+  { experimentRunId: 1 },
+  { unique: true, partialFilterExpression: { active: true } },
+);
 
 export const RuleSet = mongoose.model("RuleSet", RuleSetSchema);

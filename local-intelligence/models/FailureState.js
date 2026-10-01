@@ -3,26 +3,37 @@ import mongoose from "mongoose";
 const FailureStateSchema = new mongoose.Schema(
   {
     experimentRunId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ExperimentRun",
-      required: true,
+      default: null,
       index: true,
     },
 
     agentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
       default: null,
     },
 
+    type: {
+      type: String,
+      default: "failure",
+    },
+
     code: {
       type: String,
-      required: true,
+      default: "UNSPECIFIED_FAILURE",
+      index: true,
+    },
+
+    message: {
+      type: String,
+      default: "",
     },
 
     reason: {
       type: String,
-      required: true,
+      default: "",
     },
 
     stack: {
@@ -38,6 +49,18 @@ const FailureStateSchema = new mongoose.Schema(
     resolved: {
       type: Boolean,
       default: false,
+      index: true,
+    },
+
+    status: {
+      type: String,
+      enum: ["detected", "recovering", "resolved", "unresolved"],
+      default: "detected",
+    },
+
+    metadata: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
     },
 
     timestamp: {

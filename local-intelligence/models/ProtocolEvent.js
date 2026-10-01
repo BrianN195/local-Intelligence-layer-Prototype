@@ -26,7 +26,7 @@ const ProtocolEventSchema = new mongoose.Schema(
 
     // Related experiment
     experimentRunId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ExperimentRun",
       default: null,
       index: true,
@@ -34,29 +34,29 @@ const ProtocolEventSchema = new mongoose.Schema(
 
     // Related agent/device
     agentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
       default: null,
       index: true,
     },
 
-    // Related session
+    // Optional external Crowds session identifier.
     sessionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Session",
+      type: String,
+      trim: true,
       default: null,
     },
 
     // Related signal
     signalId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Signal",
       default: null,
     },
 
     // Related propagation
     propagationEventId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "PropagationEvent",
       default: null,
     },

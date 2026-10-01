@@ -4,18 +4,20 @@ const NeighborhoodSchema = new mongoose.Schema(
   {
     // Related experiment
     experimentRunId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ExperimentRun",
       required: true,
+      index: true,
     },
     name: {
       type: String,
-      required: true,
+      trim: true,
+      default: "",
     },
     // Members
     agentIds: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "Agent",
       },
     ],
@@ -38,46 +40,48 @@ const NeighborhoodSchema = new mongoose.Schema(
         default: null,
       },
     },
-    globalBounds: {
+    bounds: {
       rowStart: {
         type: Number,
-        required: true,
+        default: null,
       },
       rowEnd: {
         type: Number,
-        required: true,
+        default: null,
       },
       colStart: {
         type: Number,
-        required: true,
+        default: null,
       },
       colEnd: {
         type: Number,
-        required: true,
-      },
-    },
-    neighbors: {
-      north: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Neighborhood",
-        default: null,
-      },
-      south: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Neighborhood",
-        default: null,
-      },
-      east: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Neighborhood",
-        default: null,
-      },
-      west: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Neighborhood",
         default: null,
       },
     },
+    neighbors: [
+      {
+        neighborhoodId: {
+          type: String,
+          ref: "Neighborhood",
+          required: true,
+        },
+        direction: {
+          type: String,
+          enum: [
+            "north",
+            "south",
+            "east",
+            "west",
+            "northeast",
+            "northwest",
+            "southeast",
+            "southwest",
+          ],
+          required: true,
+        },
+        distance: { type: Number, min: 0, default: 1 },
+      },
+    ],
     status: {
       type: String,
       enum: ["active", "inactive"],
@@ -95,5 +99,9 @@ const NeighborhoodSchema = new mongoose.Schema(
 NeighborhoodSchema.index({
   experimentRunId: 1,
 });
+NeighborhoodSchema.index(
+  { experimentRunId: 1, name: 1 },
+  { unique: true, partialFilterExpression: { name: { $gt: "" } } },
+);
 
 export const Neighborhood = mongoose.model("Neighborhood", NeighborhoodSchema);

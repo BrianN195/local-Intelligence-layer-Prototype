@@ -11,12 +11,8 @@ const stateSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.Mixed,
       required: true,
     },
-    updatedAt: {
-      type: Date,
-      default: Date.now,
-    },
   },
-  { timestamps: true }, // true
+  { timestamps: true },
 );
 
 export const State = mongoose.model("State", stateSchema);

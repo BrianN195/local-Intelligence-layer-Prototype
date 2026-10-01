@@ -19,7 +19,9 @@ const signalForm = document.getElementById("signal-form");
 
 const sourceAgentSelect = document.getElementById("source-agent");
 
-const targetAgentSelect = document.getElementById("target-agent");
+const signalTargetAgentSelect = document.getElementById("signal-target-agent");
+
+const ruleAppendedTargetSelect = document.getElementById("rule-appended-target");
 
 const signalStatus = document.getElementById("signal-status");
 
@@ -255,75 +257,70 @@ async function updateRuleInfo() {
 
 function updateAgentSelects(agents) {
   sourceAgentSelect.innerHTML = `
-        <option value="">
-            Select agent
-        </option>
-    `;
+    <option value="">Select agent</option>
+  `;
 
-  targetAgentSelect.innerHTML = `
-        <option value="">
-            None
-        </option>
-    `;
+  signalTargetAgentSelect.innerHTML = `
+    <option value="">None</option>
+  `;
 
   stateAgentSelect.innerHTML = `
-    <option value="">
-        Select agent
-    </option>
-    `;
+    <option value="">Select agent</option>
+  `;
 
-  actionAgentSelect.innerHTML = '<option value="">Select agent</option>';
-  ruleAgentSelect.innerHTML = '<option value="">Agent scope only</option>';
-  document.getElementById("appended-target").innerHTML = '<option value="">Select target</option>';
+  actionAgentSelect.innerHTML = `
+    <option value="">Select agent</option>
+  `;
+
+  ruleAgentSelect.innerHTML = `
+    <option value="">Agent scope only</option>
+  `;
+
+  ruleAppendedTargetSelect.innerHTML = `
+    <option value="">Select target</option>
+  `;
 
   for (const agent of agents) {
     const state = stateNames[agent.stateId] || "unknown";
-
     const shortId = agent.id.substring(0, 8);
-
     const label = `${shortId}... (${state})`;
 
+    // Source agent
     const sourceOption = document.createElement("option");
-
     sourceOption.value = agent.id;
-
     sourceOption.textContent = label;
-
     sourceAgentSelect.appendChild(sourceOption);
 
-    const targetOption = document.createElement("option");
+    // Manual signal target
+    const signalTargetOption = document.createElement("option");
+    signalTargetOption.value = agent.id;
+    signalTargetOption.textContent = label;
+    signalTargetAgentSelect.appendChild(signalTargetOption);
 
-    targetOption.value = agent.id;
-
-    targetOption.textContent = label;
-
-    targetAgentSelect.appendChild(targetOption);
-
+    // State agent
     const stateOption = document.createElement("option");
-
     stateOption.value = agent.id;
-
-    stateOption.textContent = `${agent.id.substring(0, 8)}... (${stateNames[agent.stateId] || "unknown"})`;
-
+    stateOption.textContent = label;
     stateAgentSelect.appendChild(stateOption);
 
+    // Action agent
     const actionOption = document.createElement("option");
-
     actionOption.value = agent.id;
-
-    actionOption.textContent = `${agent.deviceId} (${stateNames[agent.stateId] || "unknown"})`;
-
+    actionOption.textContent =
+      `${agent.deviceId} (${state})`;
     actionAgentSelect.appendChild(actionOption);
 
+    // Rule scope agent
     const ruleAgentOption = document.createElement("option");
     ruleAgentOption.value = agent.id;
     ruleAgentOption.textContent = label;
     ruleAgentSelect.appendChild(ruleAgentOption);
 
-    const appendedTargetOption = document.createElement("option");
-    appendedTargetOption.value = agent.id;
-    appendedTargetOption.textContent = label;
-    document.getElementById("appended-target").appendChild(appendedTargetOption);
+    // Rule appended signal target
+    const ruleAppendedTargetOption = document.createElement("option");
+    ruleAppendedTargetOption.value = agent.id;
+    ruleAppendedTargetOption.textContent = label;
+    ruleAppendedTargetSelect.appendChild(ruleAppendedTargetOption);
   }
 }
 
@@ -494,16 +491,13 @@ async function sendSignal(event) {
 
     const sourceAgentId = sourceAgentSelect.value;
 
-    const targetAgentId = targetAgentSelect.value || null;
+    const targetAgentId = signalTargetAgentSelect.value || null;
 
     const ttl = Number(document.getElementById("signal-ttl").value);
 
     const propagationMode = document.getElementById("propagation-mode").value;
 
     const propagationScope = document.getElementById("propagation-scope").value;
-
-    const propagationDirection =
-      document.getElementById("propagation-direction").value || null;
 
     const payloadText = document.getElementById("signal-payload").value.trim();
 
@@ -534,8 +528,6 @@ async function sendSignal(event) {
         hopCount: 0,
 
         propagationMode,
-
-        propagationDirection,
 
         propagationScope,
       },
@@ -862,7 +854,7 @@ async function addSignalRule(event) {
       };
       rule.appendedSignal = {
         delayMs: Number(document.getElementById("appended-delay").value),
-        targetAgentId: document.getElementById("appended-target").value,
+        targetAgentId: ruleAppendedTargetSelect.value,
         signalType: document.getElementById("appended-type").value.trim(),
         signalPayload: { strength: 1 },
         signalProperties: {
