@@ -16,6 +16,10 @@ export default function createSignal(
     targetAgentId,
     payload = {},
     properties = {},
+    targetNeighborhoodId = null,
+    route = [],
+    routingStrategy = "shortest",
+    routeCalculated = false,
   },
 ) {
   if (!run) {
@@ -39,6 +43,16 @@ export default function createSignal(
     sourceAgentId,
 
     targetAgentId,
+
+    targetNeighborhoodId,
+
+    route,
+
+    currentHop: 0,
+
+    routingStrategy,
+
+    routeCalculated,
 
     payload,
 

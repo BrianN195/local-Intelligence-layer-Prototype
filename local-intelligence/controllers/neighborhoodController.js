@@ -192,10 +192,14 @@ export function updateNeighborhoodLayout(req, res) {
 
         if (!direction) continue;
 
+        const distance = distanceBetween(source.bounds, target.bounds);
+
         source.neighbors.push({
           neighborhoodId: target.id,
           direction,
-          distance: distanceBetween(source.bounds, target.bounds),
+          distance,
+          latency: distance,
+          cost: 1,
         });
       }
     }
@@ -398,10 +402,14 @@ export function connectNeighborhoods(req, res) {
 
       if (!direction) continue;
 
+      const distance = distanceBetween(source.bounds, target.bounds);
+
       source.neighbors.push({
         neighborhoodId: target.id,
         direction,
-        distance: distanceBetween(source.bounds, target.bounds),
+        distance,
+        latency: distance,
+        cost: 1,
       });
     }
   }
@@ -411,6 +419,35 @@ export function connectNeighborhoods(req, res) {
     skipped: getStoredNeighborhoods(run).length - withBounds.length,
     neighborhoods: getStoredNeighborhoods(run),
   });
+}
+
+export function updateNeighborhoodConnection(req, res) {
+  const run = findExperimentRunById(req.body.experimentRunId);
+
+  if (!run) {
+    return res.status(404).json({ error: "ExperimentRun not found" });
+  }
+
+  const neighborhood = findNeighborhoodById(run, req.params.id);
+  const connection = neighborhood?.neighbors.find(
+    (link) => link.neighborhoodId === req.params.targetId,
+  );
+
+  if (!connection) {
+    return res.status(404).json({ error: "Connection not found" });
+  }
+
+  for (const field of ["latency", "cost"]) {
+    if (req.body[field] === undefined) continue;
+
+    if (typeof req.body[field] !== "number" || req.body[field] < 0) {
+      return res.status(400).json({ error: `${field} must be a number >= 0` });
+    }
+
+    connection[field] = req.body[field];
+  }
+
+  res.json(connection);
 }
 
 export function removeAgentFromNeighborhood(req, res) {

@@ -8,6 +8,7 @@ import {
   fillNeighborhoodSlots,
   removeAgentFromNeighborhood,
   updateNeighborhoodLayout,
+  updateNeighborhoodConnection,
 } from "../controllers/neighborhoodController.js";
 
 const router = express.Router();
@@ -19,6 +20,10 @@ router.patch("/experiment-runs/:id/layout", updateNeighborhoodLayout);
 router.post("/experiment-runs/:id/layout/fill", fillNeighborhoodSlots);
 router.post("/neighborhoods/:id/agents", addAgentsToNeighborhood);
 router.post("/neighborhoods/connect", connectNeighborhoods);
+router.patch(
+  "/neighborhoods/:id/connections/:targetId",
+  updateNeighborhoodConnection,
+);
 router.delete(
   "/neighborhoods/:id/agents/:agentId",
   removeAgentFromNeighborhood,
