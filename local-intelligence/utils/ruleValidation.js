@@ -12,67 +12,78 @@ export function validateRuleScope(rule) {
   ) {
     return {
       valid: false,
-      error:
-        "scope must be global, agent, or neighborhood.",
+      error: "scope must be global, agent, or neighborhood.",
     };
   }
 
-  if (
-    scope === "agent" &&
-    !rule.agentId
-  ) {
+  if (scope === "agent" && !rule.agentId) {
     return {
       valid: false,
-      error:
-        "agentId is required for agent-scoped rules.",
+      error: "agentId is required for agent-scoped rules.",
     };
   }
 
-  if (
-    scope === "neighborhood" &&
-    !rule.neighborhoodId
-  ) {
+  if (scope === "neighborhood" && !rule.neighborhoodId) {
     return {
       valid: false,
-      error:
-        "neighborhoodId is required for neighborhood-scoped rules.",
+      error: "neighborhoodId is required for neighborhood-scoped rules.",
     };
   }
 
   if (rule.trigger) {
-    if (rule.trigger.type !== RULE_TRIGGER_TYPES.STATE_CHANGED) {
+    const triggerType = rule.trigger.type;
+
+    const validTriggerTypes = [
+      RULE_TRIGGER_TYPES.STATE_CHANGED,
+      RULE_TRIGGER_TYPES.NEIGHBORHOOD_ALL_ACTIVE,
+      RULE_TRIGGER_TYPES.NEIGHBORHOOD_ALL_INACTIVE,
+    ];
+
+    if (!validTriggerTypes.includes(triggerType)) {
       return {
         valid: false,
-        error: "trigger.type must be state_changed.",
+        error:
+          "trigger.type must be state_changed, neighborhood_all_active, or neighborhood_all_inactive.",
       };
     }
 
-    const validStates = Object.values(STATE_NAMES);
+    /*
+     * STATE_CHANGED
+     *
+     * This trigger can filter by fromState / toState.
+     * The other trigger types do not use these fields.
+     */
+    if (triggerType === RULE_TRIGGER_TYPES.STATE_CHANGED) {
+      const validStates = Object.values(STATE_NAMES);
 
-    if (
-      rule.trigger.fromState &&
-      !validStates.includes(rule.trigger.fromState)
-    ) {
-      return {
-        valid: false,
-        error: "trigger.fromState is not a valid state.",
-      };
+      if (
+        rule.trigger.fromState &&
+        !validStates.includes(rule.trigger.fromState)
+      ) {
+        return {
+          valid: false,
+          error: "trigger.fromState is not a valid state.",
+        };
+      }
+
+      if (
+        rule.trigger.toState &&
+        !validStates.includes(rule.trigger.toState)
+      ) {
+        return {
+          valid: false,
+          error: "trigger.toState is not a valid state.",
+        };
+      }
     }
 
-    if (
-      rule.trigger.toState &&
-      !validStates.includes(rule.trigger.toState)
-    ) {
-      return {
-        valid: false,
-        error: "trigger.toState is not a valid state.",
-      };
-    }
-
+    /*
+     * All trigger-based rules currently schedule/send signals.
+     */
     if (rule.action !== RULE_ACTIONS.SEND_SIGNAL) {
       return {
         valid: false,
-        error: "state_changed rules must use the send_signal action.",
+        error: "trigger-based rules must use the send_signal action.",
       };
     }
 

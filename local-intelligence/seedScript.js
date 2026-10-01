@@ -1,4 +1,5 @@
 import { RULE_ACTIONS } from "./constants/actions.js";
+import { PROPAGATION_SCOPES } from "./constants/propagation.js";
 
 const API = "http://localhost:3000";
 
@@ -131,8 +132,19 @@ export async function seed() {
   // Agent 1 becomes active, then sends a delayed deactivate signal to Agent 9.
   const agentOne = agents[0];
   const agentNine = agents[8];
+  const agentAt5_2 = agents[13];
+  const agentAt9_4 = agents[47];
+  const agentAt9_7 = agents[74];
+  const agentAt3_9 = agents[62];
+
+  const sameNeighborhoodAgent = agents[12];
 
   seededRules.push(
+    await postRule(experimentId, {
+      signalType: "activate",
+      action: RULE_ACTIONS.ACTIVATE,
+      threshold: 1,
+    }),
     await postRule(experimentId, {
       scope: "agent",
       agentId: agentOne.id,
@@ -156,7 +168,7 @@ export async function seed() {
         },
         signalProperties: {
           propagationMode: "broadcast",
-          propagationScope: "all",
+          propagationScope: "neighborhood",
         },
       },
     }),
@@ -179,7 +191,377 @@ export async function seed() {
       threshold: 1,
     }),
   );
+  seededRules.push(
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "inactive",
+        toState: "active",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt9_4.id,
+        signalType: "global_activate_from_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-became-active",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: PROPAGATION_SCOPES.ADJACENT,
+        },
+      },
+    }),
 
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "inactive",
+        toState: "active",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt9_7.id,
+        signalType: "global_activate_from_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-became-active",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: PROPAGATION_SCOPES.ADJACENT,
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "listening",
+        toState: "active",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt9_4.id,
+        signalType: "global_activate_from_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-became-active",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: PROPAGATION_SCOPES.ADJACENT,
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "listening",
+        toState: "active",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt9_7.id,
+        signalType: "global_activate_from_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-became-active",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: PROPAGATION_SCOPES.ADJACENT,
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      signalType: "global_activate_from_5_2",
+      action: RULE_ACTIONS.ACTIVATE,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "global_activate_from_5_2",
+      action: RULE_ACTIONS.PROPAGATE,
+      threshold: 1,
+    }),
+  );
+  seededRules.push(
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt3_9.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "inactive",
+        toState: "active",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt5_2.id,
+        signalType: "global_deactivate_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-3-9-became-active",
+        },
+        signalProperties: {
+          propagationMode: "direct",
+          propagationScope: "none",
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt3_9.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "waiting",
+        toState: "active",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt5_2.id,
+        signalType: "global_deactivate_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-3-9-became-active",
+        },
+        signalProperties: {
+          propagationMode: "direct",
+          propagationScope: "none",
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt3_9.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "listening",
+        toState: "active",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt5_2.id,
+        signalType: "global_deactivate_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-3-9-became-active",
+        },
+        signalProperties: {
+          propagationMode: "direct",
+          propagationScope: "none",
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      signalType: "global_deactivate_5_2",
+      action: RULE_ACTIONS.INACTIVATE,
+      threshold: 1,
+    }),
+  );
+  seededRules.push(
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "listening",
+        toState: "waiting",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: sameNeighborhoodAgent.id,
+        signalType: "local_deactivate_from_5_2_waiting",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-entered-waiting",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: "neighborhood",
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "active",
+        toState: "inactive",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: sameNeighborhoodAgent.id,
+        signalType: "local_deactivate_from_5_2_waiting",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-entered-waiting",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: "neighborhood",
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      signalType: "local_deactivate_from_5_2_waiting",
+      action: RULE_ACTIONS.INACTIVATE,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "local_deactivate_from_5_2_waiting",
+      action: RULE_ACTIONS.PROPAGATE,
+      threshold: 1,
+    }),
+  );
+  seededRules.push(
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "active",
+        toState: "inactive",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt9_4.id,
+        signalType: "global_deactivate_from_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-became-inactive",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: PROPAGATION_SCOPES.ADJACENT,
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "active",
+        toState: "listening",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt9_4.id,
+        signalType: "global_deactivate_from_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-became-inactive",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: PROPAGATION_SCOPES.ADJACENT,
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "active",
+        toState: "inactive",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt9_7.id,
+        signalType: "global_deactivate_from_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-became-inactive",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: PROPAGATION_SCOPES.ADJACENT,
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      signalType: "global_deactivate_from_5_2",
+      action: RULE_ACTIONS.INACTIVATE,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "global_deactivate_from_5_2",
+      action: RULE_ACTIONS.PROPAGATE,
+      threshold: 1,
+    }),
+  );
+  seededRules.push(
+    await postRule(experimentId, {
+      scope: "agent",
+      agentId: agentAt5_2.id,
+      trigger: {
+        type: "state_changed",
+        fromState: "inactive",
+        toState: "active",
+      },
+      action: RULE_ACTIONS.SEND_SIGNAL,
+      appendedSignal: {
+        delayMs: 0,
+        targetAgentId: agentAt3_9.id,
+        signalType: "deactivate_3_9_from_5_2",
+        signalPayload: {
+          strength: 1,
+          reason: "agent-5-2-became-active",
+        },
+        signalProperties: {
+          propagationMode: "broadcast",
+          propagationScope: PROPAGATION_SCOPES.NEIGHBORHOOD,
+        },
+      },
+    }),
+
+    await postRule(experimentId, {
+      signalType: "deactivate_3_9_from_5_2",
+      action: RULE_ACTIONS.INACTIVATE,
+      threshold: 1,
+    }),
+
+    await postRule(experimentId, {
+      signalType: "deactivate_3_9_from_5_2",
+      action: RULE_ACTIONS.PROPAGATE,
+      threshold: 1,
+    }),
+  );
   console.log(
     `Added ${seededRules.length} rules to ${ruleSet.name}, including the Agent 1 follow-up scenario.`,
   );

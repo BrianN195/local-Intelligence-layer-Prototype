@@ -8,6 +8,7 @@ import signalRoutes from "./routes/signals.js";
 import rulesetRoutes from "./routes/rulesets.js";
 import evaluateRuleRoutes from "./routes/rules.js";
 import { seed } from "./seedScript.js";
+import { seedTwo } from "./seedScript2.js";
 
 const app = express();
 app.use(cors());
@@ -31,36 +32,11 @@ seed().catch((error) => {
 
   console.error(error.message);
 });
-// ================FOR AUTOMATE AUTONOMUS AGENTS======================================
-// if you want turn off, select the rows (37-60) and commit it out (STRG+SHIFT+7) 
+// seedTwo().catch((error) => {
+//   console.error("\nSeed failed:");
 
-// const API = "http://localhost:3000";
-// async function post(endpoint, body) {
-//   const res = await fetch(`${API}${endpoint}`, {
-//     method: "POST",
-//     headers: {
-//       "Content-Type": "application/json",
-//     },
-//     body: JSON.stringify(body),
-//   });
-
-//   if (!res.ok) {
-//     const error = await res.text();
-
-//     throw new Error(`${res.status}: ${error}`);
-//   }
-
-//   return await res.json();
-// }
-
-// setInterval(() => {
-//   post("/experiment-runs/experiment-9x9-test/simulation/ticks", {
-//     tickCount: 1,
-//   });
-// }, 3000);
-// ======================================================
-
-
+//   console.error(error.message);
+// });
 app.listen(3000, () => {
   console.log("Local Intelligence running on port 3000");
 });
