@@ -3,21 +3,28 @@ import mongoose from "mongoose";
 const neighborRelationSchema = new mongoose.Schema(
   {
     sourceAgent: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
       required: true,
       index: true,
     },
 
     targetAgent: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
       required: true,
       index: true,
     },
 
-    distance: Number,
-    strength: Number,
+    neighborhoodId: {
+      type: String,
+      ref: "Neighborhood",
+      default: null,
+      index: true,
+    },
+
+    distance: { type: Number, min: 0, default: null },
+    strength: { type: Number, min: 0, max: 1, default: null },
     isActive: {
       type: Boolean,
       default: true,
@@ -35,9 +42,7 @@ neighborRelationSchema.index(
   { unique: true },
 ); // unique
 
-neighborRelationSchema.index({ createdAt: 1 }, { expireAfterSeconds: 1800 }); // 30 minuten
-
 export const NeighborhoodRelation = mongoose.model(
-  "NeighborRelation",
+  "NeighborhoodRelation",
   neighborRelationSchema,
 );

@@ -1,5 +1,7 @@
 # Proposal: Intelligent Signal Routing for the Local Intelligence Layer
 
+> This README describes a routing proposal, not the current MongoDB persistence implementation. For local setup see [the German project-start guide](doku/deutsch/projektstart.md) or [the English project-start guide](doku/english/project-start.md); for the implemented persistence scope and handover limits see [the German handover](doku/deutsch/mongodb-persistenz-uebergabe.md) or [the English handover](doku/english/mongodb-persistence-handover.md).
+
 ## Motivation
 
 The current architecture already provides a strong foundation:

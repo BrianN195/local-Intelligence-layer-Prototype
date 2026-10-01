@@ -83,46 +83,5 @@ export const conditionDefinitions = [
 ];
 
 export const store = {
-  experimentRuns: [
-    {
-      id: "1",
-      status: "running",
-
-      agents: [],
-      neighborhoods: [],
-      rulesets: [],
-      signals: [
-    /*
-    {
-        id,
-        type,
-        sourceId,
-        targetId,
-
-        payload: {
-            strength,
-            color
-        },
-
-        properties: {
-            ttl,
-            hopCount,
-            priority
-        },
-
-        timestamp,
-
-        status,
-
-        blocked
-    }
-    */
-],
-      states: [],
-      stateHistory: [],
-      propagationEvents: [],
-      observationMetrics: [],
-      scheduledActions: [],
-    }
-  ]
+  experimentRuns: [],
 };

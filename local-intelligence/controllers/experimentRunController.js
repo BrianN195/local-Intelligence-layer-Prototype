@@ -27,6 +27,8 @@ export function createExperimentrun(req, res) {
   const run = {
     id,
 
+    environment: req.body.environment ?? "test",
+
     status: "created",
 
     lifecycle: {

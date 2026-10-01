@@ -1,12 +1,22 @@
-const ObservationMetricSchema = new mongoose.Schema({
-  experimentRunId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "ExperimentRun",
+import mongoose from "mongoose";
+
+const ObservationMetricSchema = new mongoose.Schema(
+  {
+    experimentRunId: {
+      type: String,
+      ref: "ExperimentRun",
+      required: true,
+      index: true,
+    },
+    type: { type: String, required: true, trim: true, index: true },
+    value: { type: Number, required: true, validate: Number.isFinite },
+    timestamp: { type: Date, default: Date.now, index: true },
+    dimensions: { type: mongoose.Schema.Types.Mixed, default: {} },
   },
-  type: String,
-  value: Number,
-  timestamp: { type: Date, default: Date.now },
-});
+  { timestamps: true },
+);
+
+ObservationMetricSchema.index({ experimentRunId: 1, type: 1, timestamp: -1 });
 
 export const ObservationMetric = mongoose.model(
   "ObservationMetric",

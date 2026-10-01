@@ -11,13 +11,14 @@ const SignalSchema = new mongoose.Schema(
 
     // Experiment reference
     experimentRunId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ExperimentRun",
+      required: true,
       index: true,
     },
     // Neighborhood reference
     neighborhoodId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Neighborhood",
       default: null,
       index: true,
@@ -25,7 +26,7 @@ const SignalSchema = new mongoose.Schema(
 
     // Source Agent
     sourceAgentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
       required: true,
       index: true,
@@ -33,8 +34,22 @@ const SignalSchema = new mongoose.Schema(
 
     // Target Agent
     targetAgentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
+      default: null,
+      index: true,
+    },
+
+    targetNeighborhoodId: {
+      type: String,
+      ref: "Neighborhood",
+      default: null,
+      index: true,
+    },
+
+    parentSignalId: {
+      type: String,
+      ref: "Signal",
       default: null,
       index: true,
     },
@@ -62,6 +77,31 @@ const SignalSchema = new mongoose.Schema(
         default: null,
       },
 
+      propagationMode: {
+        type: String,
+        enum: ["broadcast", "random", "priority", "unicast"],
+        default: "broadcast",
+      },
+
+      propagationScope: {
+        type: String,
+        enum: [
+          "neighborhood",
+          "adjacent",
+          "specific",
+          "direction",
+          "route",
+          "all",
+          "global",
+        ],
+        default: "neighborhood",
+      },
+
+      propagationDirection: {
+        type: String,
+        default: null,
+      },
+
       hopCount: {
         type: Number,
         default: 0,
@@ -71,7 +111,17 @@ const SignalSchema = new mongoose.Schema(
     // Processing status
     status: {
       type: String,
-      enum: ["created", "sent", "received", "processed", "failed"],
+      enum: [
+        "created",
+        "processing",
+        "propagated",
+        "completed",
+        "blocked",
+        "sent",
+        "received",
+        "processed",
+        "failed",
+      ],
       default: "created",
       index: true,
     },
@@ -82,9 +132,18 @@ const SignalSchema = new mongoose.Schema(
       index: true,
     },
 
+    visitedAgents: [
+      {
+        type: String,
+        ref: "Agent",
+      },
+    ],
+
+    blocked: { type: Boolean, default: false },
+
     // Optional ProtocolEvent link
     protocolEventId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ProtocolEvent",
       default: null,
     },
@@ -113,15 +172,5 @@ SignalSchema.index({
   timestamp: -1,
 });
 
-
-// Remove old signals after 30 minutes
-SignalSchema.index(
-  {
-    timestamp: 1,
-  },
-  {
-    expireAfterSeconds: 1800,
-  },
-);
 
 export const Signal = mongoose.model("Signal", SignalSchema);

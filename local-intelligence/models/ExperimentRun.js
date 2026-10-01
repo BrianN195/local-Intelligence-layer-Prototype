@@ -2,10 +2,21 @@ import mongoose from "mongoose";
 
 const ExperimentRunSchema = new mongoose.Schema(
   {
-    // Existing Session
+    _id: { type: String },
+    data: {
+      type: mongoose.Schema.Types.Mixed,
+      required: true,
+    },
+    snapshotVersion: {
+      type: Number,
+      default: 1,
+      required: true,
+    },
+    // Optional external Crowds session identifier (not a local Mongo model).
     sessionId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Session",
+      type: String,
+      trim: true,
+      default: null,
       index: true,
     },
     environment: {
@@ -48,34 +59,24 @@ const ExperimentRunSchema = new mongoose.Schema(
 
     // Active Rule Set
     activeRuleSetId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "RuleSet",
+      type: String,
       default: null,
     },
 
     // Current Neighborhood
     currentNeighborhoodId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Neighborhood",
+      type: String,
       default: null,
     },
 
     // Existing Protocol Events
     protocolEventIds: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "ProtocolEvent",
+        type: String,
       },
     ],
 
     // Optional linked devices/sessions
-    sessionIds: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Session",
-      },
-    ],
-
     // Statistics
     statistics: {
       observationCount: {
@@ -143,6 +144,8 @@ ExperimentRunSchema.index({ startedAt: -1 });
 ExperimentRunSchema.index({ activeRuleSetId: 1 });
 
 ExperimentRunSchema.index({ currentNeighborhoodId: 1 });
+
+ExperimentRunSchema.set("collection", "experimentruns");
 
 export const ExperimentRun = mongoose.model(
   "ExperimentRun",

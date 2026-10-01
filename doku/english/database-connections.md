@@ -1,8 +1,10 @@
-# Database Connections
+# Database connections
+
+> **Status:** The examples below are earlier design sketches for a normalized MongoDB implementation; they are **not** the current API implementation. Local Intelligence currently persists complete `ExperimentRun` snapshots. See the [current architecture overview](architecture.md) and [run-persistence adapter](../../local-intelligence/services/runPersistence.js) for the implemented persistence path. In the current API, `row` and `col` must be supplied when creating an Agent. The sample below is historical and must not be treated as a current endpoint contract.
 
 ## Agents
 
-### Register Agent
+### Register an Agent
 
 ```js
 /* REGISTER AGENT */
@@ -57,7 +59,7 @@ router.post("/agents", async (req, res) => {
 });
 ```
 
-## Update Agent State
+### Update an Agent's state
 
 ```js
 router.patch("/agents/:id/state", async (req, res) => {
@@ -94,21 +96,4 @@ router.patch("/agents/:id/state", async (req, res) => {
 });
 ```
 
-## 
-
-```js
-
-```
-
-
-
-
-
-
-
-
-## 
-
-```js
-
-```
+The code examples intentionally retain their original normalized-model design. They are reference sketches, not evidence that these endpoints or per-Agent MongoDB documents are implemented in the current Local Intelligence API. For lifecycle policy and its implementation status, see the [data lifecycle policy](data-lifecycle-policy-v0.1.md).

@@ -1,10 +1,21 @@
 import { RULE_ACTIONS } from "./constants/actions.js";
 import { PROPAGATION_SCOPES } from "./constants/propagation.js";
 
-const API = "http://localhost:3000";
+function getApiUrl() {
+  return `http://localhost:${process.env.PORT ?? 3000}`;
+}
+
+async function get(endpoint) {
+  const res = await fetch(`${getApiUrl()}${endpoint}`);
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`${res.status}: ${await res.text()}`);
+  }
+  return res.json();
+}
 
 async function post(endpoint, body) {
-  const res = await fetch(`${API}${endpoint}`, {
+  const res = await fetch(`${getApiUrl()}${endpoint}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -30,6 +41,14 @@ async function postRule(experimentRunId, rule) {
 
 export async function seed() {
   const experimentId = "experiment-9x9-test";
+
+  const existingExperiment = await get(
+    `/experiment-runs/${experimentId}/summary`,
+  );
+  if (existingExperiment) {
+    console.log(`Demo experiment already exists: ${experimentId}`);
+    return existingExperiment;
+  }
 
   // 1. Create ExperimentRun
   const experiment = await post(`/experiment-runs/${experimentId}`, {});
@@ -63,6 +82,8 @@ export async function seed() {
       const agent = await post("/agents", {
         experimentRunId: experimentId,
         deviceId: `device-${n}-${a}`,
+        row: Math.floor(a / 3) + 1,
+        col: (a % 3) + 1,
       });
 
       agents.push(agent);

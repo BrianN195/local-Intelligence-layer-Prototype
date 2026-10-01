@@ -1,6 +1,8 @@
-# Example: Signal, Autonomy, and Follow-up Propagation
+# Example: Signal, autonomy, and follow-up propagation
 
-This scenario describes a possible flow in a 3x3 agent field. It is documentation only and does not modify runtime data or Rule configuration.
+> **Status:** The autonomy and delayed-action mechanisms used here exist in the prototype. The sequence and rule configuration below are illustrative; they are not a claim that this exact end-to-end scenario has been run or that every propagation detail is guaranteed by the current evaluator.
+
+This example describes a possible flow in a 3×3 agent field. It is documentation only and does not modify runtime data or Rule configuration.
 
 ## Initial state
 
@@ -16,7 +18,7 @@ This scenario describes a possible flow in a 3x3 agent field. It is documentatio
 +------+------+------+
 ```
 
-Agent 5 is active. All other agents are inactive.
+Agent 5 is active; all other agents are inactive.
 
 ## Participating agents
 
@@ -64,7 +66,7 @@ Agent 5 sends two `activate` signals:
 }
 ```
 
-The corresponding Rule can be global:
+An illustrative Rule configuration is:
 
 ```js
 {
@@ -77,7 +79,7 @@ The corresponding Rule can be global:
 }
 ```
 
-After processing, Agents 2 and 4 are active:
+If those signals are accepted and the Rule matches, Agents 2 and 4 become active:
 
 ```text
 +------+------+------+
@@ -89,7 +91,7 @@ After processing, Agents 2 and 4 are active:
 +------+------+------+
 ```
 
-The signal flow is:
+Conceptual flow:
 
 ```text
 Agent 5
@@ -113,9 +115,9 @@ Agent 5
 
 ## Phase 2: An autonomy tick activates Agent 1
 
-An autonomy tick analyzes Agent 1's local environment. The autonomy logic decides that Agent 1 should become active.
+In the illustrated grid, Agent 1 has two active local neighbors (Agents 2 and 4). The current autonomy logic can therefore return `activate` with reason `high_local_activity` for an eligible inactive agent.
 
-The decision can look like this:
+The decision has this shape:
 
 ```js
 {
@@ -125,7 +127,7 @@ The decision can look like this:
 }
 ```
 
-The tick executes the decision:
+The tick applies the decision and evaluates state-change Rules:
 
 ```text
 Autonomy tick
@@ -136,7 +138,7 @@ Autonomy tick
   -> state_changed triggers are evaluated
 ```
 
-The field then looks like this:
+The resulting field is:
 
 ```text
 +------+------+------+
@@ -150,7 +152,7 @@ The field then looks like this:
 
 ## Phase 3: Agent 1 triggers a follow-up Rule
 
-Agent 1 has a Rule that reacts to the `inactive -> active` state change:
+Agent 1 has an illustrative Rule that reacts to the `inactive -> active` state change:
 
 ```js
 {
@@ -181,18 +183,18 @@ Agent 1 has a Rule that reacts to the `inactive -> active` state change:
 }
 ```
 
-This Rule does not send the signal immediately. It first stores a scheduled action:
+The state-change handler schedules this action rather than sending the signal immediately:
 
 ```text
 Agent 1 becomes active
   -> state_changed trigger matches
   -> appendedSignal is stored as pending
   -> wait 5000 ms
-  -> the next simulation tick checks executeAt
+  -> a later simulation tick checks executeAt
   -> a signal to Agent 9 is created
 ```
 
-The scheduled action may look like this internally:
+An internal scheduled-action record may look like this:
 
 ```js
 {
@@ -214,11 +216,13 @@ The scheduled action may look like this internally:
 }
 ```
 
+The scheduled action is processed by a simulation tick after its due time; the delay is not implemented as a permanent background timer.
+
 ## Phase 4: Agent 9 and further receivers become inactive
 
-To make Agent 9 and further receivers inactive, the active RuleSet needs at least two Rules.
+For the desired result, the active RuleSet needs a Rule that inactivates the receiver and a propagation Rule that forwards the signal. The following examples describe the intended configuration:
 
-### Rule for inactivation
+### Inactivation Rule
 
 ```js
 {
@@ -231,9 +235,9 @@ To make Agent 9 and further receivers inactive, the active RuleSet needs at leas
 }
 ```
 
-This Rule changes the target agent of the `deactivate` signal to `inactive`.
+This Rule is intended to set the receiving agent to `inactive`.
 
-### Rule for propagation
+### Propagation Rule
 
 ```js
 {
@@ -246,16 +250,9 @@ This Rule changes the target agent of the `deactivate` signal to `inactive`.
 }
 ```
 
-This Rule allows the signal to reach further eligible agents. Both Rules must belong to the same active RuleSet.
+This Rule is intended to forward the signal to additional eligible agents. Both Rules must be in the active RuleSet. The example assumes that the evaluator processes the inactivation before forwarding at each receiver; confirm ordering, target selection, and termination behavior against the configured propagation implementation.
 
-For this scenario, the preferred order in the active RuleSet is:
-
-```text
-1. deactivate -> inactivate
-2. deactivate -> propagate
-```
-
-This means Agent 9 becomes inactive when it first receives the signal, after which the same signal can continue propagating. Each further receiver processes:
+Intended per-receiver flow:
 
 ```text
 Deactivate signal
@@ -265,7 +262,7 @@ Deactivate signal
   -> signal is sent to further eligible agents
 ```
 
-After the first processing at Agent 9, the field may look like this:
+After Agent 9 receives and processes the signal, the field should be shown as:
 
 ```text
 +------+------+------+
@@ -277,9 +274,9 @@ After the first processing at Agent 9, the field may look like this:
 +------+------+------+
 ```
 
-If propagation reaches additional agents, they are also made inactive by the `deactivate -> inactivate` Rule.
+Agent 9 remains inactive in this displayed step; the signal does not cause an additional state change for that agent. Further agents change state only if propagation reaches them and the inactivation Rule applies.
 
-## Complete flow
+## Complete illustrative flow
 
 ```text
 Initial state:
@@ -297,16 +294,18 @@ Initial state:
 8. The Rule schedules an appendedSignal with delayMs 5000.
 9. A later simulation tick creates deactivate from Agent 1 to Agent 9.
 10. The deactivate -> inactivate Rule makes Agent 9 inactive.
-11. The deactivate -> propagate Rule forwards the signal.
-12. Each further receiver also becomes inactive.
+11. The deactivate -> propagate Rule forwards the signal, if supported by the active configuration.
+12. Each further receiver becomes inactive only if it receives the signal and the inactivation Rule matches.
 ```
 
-## Technical prerequisites
+## Technical prerequisites and caveats
 
-- Agent 5 needs two valid target agents and sends two separate signals.
-- Agent 1 must actually change from `inactive` to `active` for the trigger to fire.
-- Agent 1 needs a neighborhood if the follow-up signal is to use the current propagation model.
-- Agent 9 must exist as an agent so `createSignal` can create the signal.
-- Agents involved in global propagation must be located in compatible neighborhood structures.
-- Both `deactivate -> inactivate` and `deactivate -> propagate` must exist in the active RuleSet.
-- The 5000 ms delayed action is processed by the next simulation tick after it becomes due, not by a permanent background timer.
+- Agent 5 must have two valid target agents, and the two signals are separate.
+- Agent 1 must actually transition from `inactive` to `active` for the state-change trigger to match.
+- Agent 1 needs a neighborhood for the illustrated local-neighborhood behavior.
+- Agent 9 must exist for `createSignal` to create the follow-up signal.
+- Agents must be reachable under the active propagation mode, scope, and neighborhood configuration.
+- The `deactivate -> inactivate` and `deactivate -> propagate` behaviors must be supported and configured in the active RuleSet; the example does not certify their exact evaluator order.
+- The delayed action is processed by a simulation tick after 5000 ms have elapsed, not by a permanent background timer.
+
+See [Autonomy strategy](autonomy-strategy.md) and [Entity map](entity-map-v0.1.md).

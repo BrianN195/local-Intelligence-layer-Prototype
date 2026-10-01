@@ -1,17 +1,18 @@
 import mongoose from "mongoose";
+import { randomUUID } from "node:crypto";
 
 const PropagationEventSchema = new mongoose.Schema(
   {
     // Related signal
     signalId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Signal",
       required: true,
     },
 
     // Experiment reference
     experimentRunId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ExperimentRun",
       required: true,
       index: true,
@@ -19,7 +20,7 @@ const PropagationEventSchema = new mongoose.Schema(
 
     // Neighborhood reference
     neighborhoodId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Neighborhood",
       default: null,
       index: true,
@@ -27,24 +28,44 @@ const PropagationEventSchema = new mongoose.Schema(
 
     // Source Agent
     sourceAgentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
-      required: true,
+      default: null,
       index: true,
     },
 
     // Target Agent
     targetAgentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
-      required: true,
+      default: null,
       index: true,
     },
+
+    signalType: { type: String, default: null },
+    parentSignalId: {
+      type: String,
+      ref: "Signal",
+      default: null,
+    },
+    signalStrength: { type: Number, default: 0 },
+    ttlRemaining: { type: Number, min: 0, default: 0 },
+    delayMs: { type: Number, min: 0, default: null },
+    localStateBefore: { type: mongoose.Schema.Types.Mixed, default: null },
+    localStateAfter: { type: mongoose.Schema.Types.Mixed, default: null },
+    sourceState: { type: mongoose.Schema.Types.Mixed, default: null },
+    targetState: { type: mongoose.Schema.Types.Mixed, default: null },
+    triggeredRules: [
+      {
+        type: String,
+        ref: "Rule",
+      },
+    ],
 
     // Rules that triggered this propagation
     triggeredRuleIds: [
       {
-        type: mongoose.Schema.Types.ObjectId,
+        type: String,
         ref: "Rule",
       },
     ],
@@ -88,14 +109,22 @@ const PropagationEventSchema = new mongoose.Schema(
     // Tracking
     correlationId: {
       type: String,
-      required: true,
+      default: randomUUID,
       index: true,
     },
 
     // Processing status
     status: {
       type: String,
-      enum: ["created", "sent", "received", "processed", "blocked", "failed"],
+      enum: [
+        "created",
+        "sent",
+        "received",
+        "processed",
+        "success",
+        "blocked",
+        "failed",
+      ],
       default: "created",
       index: true,
     },
@@ -120,7 +149,7 @@ const PropagationEventSchema = new mongoose.Schema(
 
     // Link to old infrastructure
     protocolEventId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ProtocolEvent",
       default: null,
     },
@@ -150,16 +179,6 @@ PropagationEventSchema.index({
 PropagationEventSchema.index({
   signalId: 1,
 });
-
-// Optional cleanup of old propagation logs
-PropagationEventSchema.index(
-  {
-    createdAt: 1,
-  },
-  {
-    expireAfterSeconds: 1800,
-  },
-);
 
 export const PropagationEvent = mongoose.model(
   "PropagationEvent",

@@ -434,7 +434,6 @@ export function removeAgentFromNeighborhood(req, res) {
 
   neighborhood.agentIds = neighborhood.agentIds.filter((id) => id !== agent.id);
   agent.neighborhoodId = null;
-  agent.position = { row: null, col: null };
 
   res.json(neighborhood);
 }

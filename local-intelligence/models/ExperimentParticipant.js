@@ -3,16 +3,23 @@ import mongoose from "mongoose";
 const ExperimentParticipantSchema = new mongoose.Schema(
   {
     experimentRunId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ExperimentRun",
       required: true,
       //  index:true
     },
 
     agentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
       required: true,
+      index: true,
+    },
+
+    neighborhoodId: {
+      type: String,
+      ref: "Neighborhood",
+      default: null,
       index: true,
     },
 

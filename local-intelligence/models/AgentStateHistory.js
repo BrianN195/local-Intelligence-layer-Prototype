@@ -3,26 +3,50 @@ import mongoose from "mongoose";
 const AgentStateHistorySchema = new mongoose.Schema(
   {
     agentId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Agent",
       required: true,
       index: true,
     },
 
     experimentRunId: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "ExperimentRun",
+      required: true,
       index: true,
     },
 
-    previousState: {
+    signalId: {
       type: String,
+      ref: "Signal",
+      default: null,
+    },
+
+    triggeredRules: [
+      {
+        type: String,
+        ref: "Rule",
+      },
+    ],
+
+    previousState: {
+      type: Number,
       default: null,
     },
 
     newState: {
-      type: String,
+      type: Number,
       required: true,
+    },
+
+    changed: {
+      type: Boolean,
+      default: true,
+    },
+
+    swarmStateChanged: {
+      type: Boolean,
+      default: null,
     },
 
     reason: {
