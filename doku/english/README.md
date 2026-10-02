@@ -26,3 +26,4 @@ The documentation is organized by language. These pages include current implemen
 - [Intelligent signal routing](intelligent-signal-routing.md)
 - [Autonomy strategy](autonomy-strategy.md)
 - [Signal, rule, and autonomy example](rule-signal-autonomy-example.md)
+- [Example: Crows and Holy — interactive show activation](crows-holy-show-activation.md)

@@ -26,3 +26,4 @@ Die Dokumente sind nach Sprache sortiert. Sie enthalten sowohl Hinweise zur aktu
 - [Intelligentes Signalrouting](intelligentes-signalrouting.md)
 - [Autonomiestrategie](autonomie-strategie.md)
 - [Beispiel: Signal, Rule und Autonomie](regel-signal-autonomie-beispiel.md)
+- [Beispiel: Crows und Holy – interaktive Show-Aktivierung](crows-holy-show-aktivierung.md)
